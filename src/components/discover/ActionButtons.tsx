@@ -1,82 +1,59 @@
 export default function ActionButtons({
-  onSkip,
   onReject,
   onAccept,
   onSuper,
+  disabled = false,
 }: {
-  onSkip: () => void;
   onReject: () => void;
   onAccept: () => void;
-  onSuper: () => void;
+  onSuper:  () => void;
+  disabled?: boolean;
 }) {
+  const btn = (
+    id: string,
+    onClick: () => void,
+    content: React.ReactNode,
+    size: 'sm' | 'lg',
+    colors: { border: string; bg: string; color: string }
+  ) => {
+    const dim = size === 'lg' ? 60 : 46;
+    return (
+      <button
+        id={id}
+        disabled={disabled}
+        onClick={onClick}
+        className="flex items-center justify-center transition-state active:scale-90 disabled:opacity-30"
+        style={{
+          width: dim, height: dim,
+          borderRadius: '50%',
+          border: `0.5px solid ${colors.border}`,
+          background: colors.bg,
+          color: colors.color,
+          fontSize: size === 'lg' ? 22 : 16,
+          flexShrink: 0,
+        }}
+      >
+        {content}
+      </button>
+    );
+  };
+
   return (
-    <div className="flex flex-col items-center gap-2 mt-4 px-4">
+    <div className="flex flex-col items-center gap-2 px-4 mt-4">
       <div className="flex items-center justify-center gap-4">
-        {/* Skip sm */}
-        <button
-          id="btn-skip"
-          onClick={onSkip}
-          className="flex items-center justify-center card-hover-transition active:scale-95"
-          style={{
-            width: 44, height: 44,
-            borderRadius: '99px',
-            border: '0.5px solid rgba(251,113,133,0.3)',
-            background: 'rgba(251,113,133,0.07)',
-            color: '#fb7185',
-            fontSize: 16,
-          }}
-        >↺</button>
-
-        {/* Reject lg */}
-        <button
-          id="btn-reject"
-          onClick={onReject}
-          className="flex items-center justify-center card-hover-transition active:scale-95"
-          style={{
-            width: 60, height: 60,
-            borderRadius: '99px',
-            border: '0.5px solid rgba(251,113,133,0.35)',
-            background: 'rgba(251,113,133,0.07)',
-            color: '#fb7185',
-            fontSize: 22,
-          }}
-        >✕</button>
-
-        {/* Accept lg */}
-        <button
-          id="btn-accept"
-          onClick={onAccept}
-          className="flex items-center justify-center card-hover-transition active:scale-95"
-          style={{
-            width: 60, height: 60,
-            borderRadius: '99px',
-            border: '0.5px solid rgba(74,222,128,0.35)',
-            background: 'rgba(74,222,128,0.1)',
-            color: '#4ade80',
-            fontSize: 22,
-          }}
-        >✓</button>
-
-        {/* Super sm */}
-        <button
-          id="btn-super"
-          onClick={onSuper}
-          className="flex items-center justify-center card-hover-transition active:scale-95"
-          style={{
-            width: 44, height: 44,
-            borderRadius: '99px',
-            border: '0.5px solid rgba(250,199,30,0.35)',
-            background: 'rgba(250,199,30,0.1)',
-            color: '#FAC71E',
-            fontSize: 16,
-          }}
-        >★</button>
+        {btn('btn-reject-sm', onReject, '✕',
+          'sm', { border: 'rgba(251,113,133,0.3)', bg: 'rgba(251,113,133,0.07)', color: '#fb7185' }
+        )}
+        {btn('btn-accept', onAccept, '✓',
+          'lg', { border: 'rgba(74,222,128,0.4)', bg: 'rgba(74,222,128,0.1)', color: '#4ade80' }
+        )}
+        {btn('btn-super', onSuper, '★',
+          'sm', { border: 'rgba(250,199,30,0.35)', bg: 'rgba(250,199,30,0.08)', color: '#FAC71E' }
+        )}
       </div>
-
-      {/* Hints */}
-      <div className="flex justify-between w-full px-4 mt-1">
-        <span className="text-[10px] font-body" style={{ color: 'rgba(240,238,232,0.25)' }}>← desliza para saltar</span>
-        <span className="text-[10px] font-body" style={{ color: 'rgba(240,238,232,0.25)' }}>desliza para intercambiar →</span>
+      <div className="flex justify-between w-full px-2">
+        <span className="text-[10px]" style={{ color: 'rgba(240,238,232,0.22)' }}>← pasar</span>
+        <span className="text-[10px]" style={{ color: 'rgba(240,238,232,0.22)' }}>intercambiar →</span>
       </div>
     </div>
   );

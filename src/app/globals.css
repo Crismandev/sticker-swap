@@ -1,80 +1,72 @@
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&display=swap');
 @import "tailwindcss";
 
 /* ============================================================
    DESIGN TOKENS
    ============================================================ */
 :root {
-  --color-bg-base:        #0a0a0f;
-  --color-bg-card:        #12121a;
-  --color-bg-surface:     rgba(255,255,255,0.04);
-  --color-border:         rgba(255,255,255,0.08);
-  --color-border-hover:   rgba(255,255,255,0.14);
+  /* Backgrounds */
+  --bg-base:    #090910;
+  --bg-card:    #111119;
+  --bg-surface: rgba(255,255,255,0.04);
 
-  --color-gold:           #FAC71E;
-  --color-gold-dim:       rgba(250,199,30,0.12);
-  --color-gold-border:    rgba(250,199,30,0.25);
+  /* Borders */
+  --border:       rgba(255,255,255,0.08);
+  --border-hover: rgba(255,255,255,0.15);
 
-  --color-owned:          #4ade80;
-  --color-owned-dim:      rgba(74,222,128,0.08);
-  --color-repeated:       #FAC71E;
-  --color-missing:        rgba(240,238,232,0.15);
-  --color-foil:           rgba(192,160,255,0.6);
+  /* Gold — primary accent */
+  --gold:        #FAC71E;
+  --gold-dim:    rgba(250,199,30,0.12);
+  --gold-border: rgba(250,199,30,0.28);
 
-  --color-accept:         #4ade80;
-  --color-reject:         #fb7185;
+  /* Sticker status */
+  --owned:       #4ade80;
+  --owned-dim:   rgba(74,222,128,0.08);
+  --repeated:    #FAC71E;
+  --reject:      #fb7185;
+  --reject-dim:  rgba(251,113,133,0.08);
+  --foil:        rgba(192,160,255,0.7);
 
-  --color-text-primary:   #f0eee8;
-  --color-text-secondary: rgba(240,238,232,0.45);
-  --color-text-hint:      rgba(240,238,232,0.25);
+  /* Text */
+  --text-primary:   #f0eee8;
+  --text-secondary: rgba(240,238,232,0.5);
+  --text-hint:      rgba(240,238,232,0.28);
 
-  --radius-card:          20px;
-  --radius-chip:          10px;
-  --radius-pill:          99px;
-  --radius-button:        12px;
+  /* Radii */
+  --r-card:   20px;
+  --r-chip:   10px;
+  --r-pill:   99px;
+  --r-btn:    12px;
 }
 
 /* ============================================================
-   RESET & BASE
+   RESET
    ============================================================ */
-*, *::before, *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-html, body {
-  height: 100%;
-  -webkit-tap-highlight-color: transparent;
-}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overscroll-behavior: none; }
 
 body {
-  background-color: var(--color-bg-base);
-  color: var(--color-text-primary);
-  font-family: 'DM Sans', sans-serif;
-  font-size: 14px;
-  line-height: 1.5;
-  overflow-x: hidden;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: 'DM Sans', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
+  overflow-x: hidden;
 }
 
 /* ============================================================
-   TYPOGRAPHY
+   TYPOGRAPHY HELPERS
    ============================================================ */
-.font-display {
-  font-family: 'Bebas Neue', sans-serif;
-  letter-spacing: 0.04em;
-}
+.font-display { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.04em; }
 
 /* ============================================================
    GRID BACKGROUND
    ============================================================ */
 .grid-bg {
-  position: relative;
   background-image:
-    linear-gradient(rgba(255,255,255,0.022) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.022) 1px, transparent 1px);
+    linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px);
   background-size: 32px 32px;
 }
 
@@ -89,77 +81,47 @@ body {
    ============================================================ */
 @keyframes pulse-dot {
   0%, 100% { opacity: 1; }
-  50%       { opacity: 0.35; }
+  50%       { opacity: 0.3; }
 }
-
-@keyframes toastIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
+@keyframes toast-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
-
-@keyframes toastOut {
-  from { opacity: 1; transform: translateY(0); }
-  to   { opacity: 0; transform: translateY(8px); }
-}
-
-@keyframes matchModalIn {
-  from { opacity: 0; transform: scale(0.95); }
+@keyframes modal-in {
+  from { opacity: 0; transform: scale(0.93); }
   to   { opacity: 1; transform: scale(1); }
 }
-
-.animate-pulse-dot {
-  animation: pulse-dot 1.8s ease infinite;
+@keyframes card-fly-right {
+  to { transform: translateX(150%) rotate(20deg); opacity: 0; }
+}
+@keyframes card-fly-left {
+  to { transform: translateX(-150%) rotate(-20deg); opacity: 0; }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
-.animate-toast-in {
-  animation: toastIn 0.2s ease forwards;
-}
-
-.animate-toast-out {
-  animation: toastOut 0.2s ease forwards;
-}
-
-.animate-match-modal {
-  animation: matchModalIn 0.35s cubic-bezier(.34,1.56,.64,1) forwards;
-}
-
-/* ============================================================
-   CARD TRANSITION (swipe)
-   ============================================================ */
-.card-transition {
-  transition: transform 0.35s cubic-bezier(.34,1.56,.64,1), opacity 0.25s ease;
-}
-
-.card-hover-transition {
-  transition: all 0.15s ease;
-}
+.animate-pulse-dot    { animation: pulse-dot 1.8s ease infinite; }
+.animate-toast-in     { animation: toast-in 0.22s ease forwards; }
+.animate-modal-in     { animation: modal-in 0.35s cubic-bezier(.34,1.56,.64,1) forwards; }
+.animate-fade-in      { animation: fade-in 0.25s ease forwards; }
 
 /* ============================================================
-   STICKER CARD STATES
+   TRANSITIONS
    ============================================================ */
-.sticker-wanted {
-  background: rgba(255,255,255,0.03);
-  border-color: rgba(255,255,255,0.07);
-}
-
-.sticker-owned {
-  background: rgba(74,222,128,0.06);
-  border-color: rgba(74,222,128,0.35);
-}
-
-.sticker-repeated {
-  background: rgba(250,199,30,0.06);
-  border-color: rgba(250,199,30,0.4);
-}
-
-.sticker-foil {
-  border-color: rgba(192,160,255,0.5);
-  background: linear-gradient(135deg, rgba(192,160,255,0.08) 0%, rgba(255,255,255,0.03) 100%);
-}
+.transition-card  { transition: transform 0.35s cubic-bezier(.34,1.56,.64,1), opacity 0.25s ease; }
+.transition-state { transition: all 0.15s ease; }
 
 /* ============================================================
-   BOTTOM NAV SAFE AREA
+   STICKER STATES
    ============================================================ */
-.bottom-nav-pad {
-  padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
-}
+.sticker-wanted  { background: rgba(255,255,255,0.025); border-color: rgba(255,255,255,0.06); }
+.sticker-owned   { background: rgba(74,222,128,0.07);   border-color: rgba(74,222,128,0.38); }
+.sticker-repeated{ background: rgba(250,199,30,0.07);   border-color: rgba(250,199,30,0.42); }
+.sticker-foil    { border-color: rgba(192,160,255,0.5); }
+
+/* ============================================================
+   SAFE-AREA PADDING FOR NAV
+   ============================================================ */
+.nav-pad { padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px)); }

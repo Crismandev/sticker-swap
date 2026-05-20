@@ -5,27 +5,23 @@ import BottomNav from '@/components/layout/BottomNav';
 
 export const metadata: Metadata = {
   title: 'Sticker Swap — FIFA World Cup 2026',
-  description: 'Encuentra personas para intercambiar tus figuritas Panini del Mundial 2026.',
-  manifest: '/manifest.json',
+  description: 'Intercambia figuritas Panini del Mundial 2026 con otros coleccionistas.',
 };
 
 export const viewport: Viewport = {
-  themeColor: '#0a0a0f',
+  themeColor: '#090910',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
+  userScalable: false,
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es" className="h-full">
-      <body className="h-full font-body antialiased" style={{ backgroundColor: '#0a0a0f' }}>
+      <body className="h-full antialiased" style={{ backgroundColor: '#090910', fontFamily: "'DM Sans', system-ui, sans-serif" }}>
         <GridBackground>
-          <main className="bottom-nav-pad">
+          <main className="nav-pad">
             {children}
           </main>
           <BottomNav />

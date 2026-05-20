@@ -1,53 +1,51 @@
 'use client';
 
-import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import Link from 'next/link';
 
-const tabs = [
+const NAV = [
   {
     href: '/album',
-    label: 'Album',
-    icon: (active: boolean) => (
-      <svg width="22" height="22" viewBox="0 0 22 22" fill="none" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
-        stroke={active ? '#FAC71E' : 'rgba(240,238,232,0.25)'}>
-        <rect x="3" y="3" width="7" height="7" rx="1.5" />
-        <rect x="12" y="3" width="7" height="7" rx="1.5" />
-        <rect x="3" y="12" width="7" height="7" rx="1.5" />
-        <rect x="12" y="12" width="7" height="7" rx="1.5" />
+    label: 'Álbum',
+    icon: (a: boolean) => (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+        stroke={a ? '#FAC71E' : 'rgba(240,238,232,0.3)'} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="3" width="8" height="8" rx="1.5"/>
+        <rect x="13" y="3" width="8" height="8" rx="1.5"/>
+        <rect x="3" y="13" width="8" height="8" rx="1.5"/>
+        <rect x="13" y="13" width="8" height="8" rx="1.5"/>
       </svg>
     ),
   },
   {
     href: '/discover',
     label: 'Discover',
-    icon: (active: boolean) => (
-      <svg width="22" height="22" viewBox="0 0 22 22" fill="none" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
-        stroke={active ? '#FAC71E' : 'rgba(240,238,232,0.25)'}>
-        <path d="M11 19.5C11 19.5 2.5 13.5 2.5 8a8.5 8.5 0 0 1 8.5-5.5A8.5 8.5 0 0 1 19.5 8c0 5.5-8.5 11.5-8.5 11.5z" />
-        <circle cx="11" cy="8.5" r="2.5" />
+    icon: (a: boolean) => (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+        stroke={a ? '#FAC71E' : 'rgba(240,238,232,0.3)'} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 21C12 21 4 14.5 4 9a8 8 0 0 1 16 0c0 5.5-8 12-8 12z"/>
+        <circle cx="12" cy="9" r="2.5"/>
       </svg>
     ),
   },
   {
     href: '/matches',
     label: 'Matches',
-    icon: (active: boolean) => (
-      <svg width="22" height="22" viewBox="0 0 22 22" fill="none" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
-        stroke={active ? '#FAC71E' : 'rgba(240,238,232,0.25)'}>
-        <path d="M19 2H3a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h4l4 4 4-4h4a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1z" />
-        <line x1="7" y1="8" x2="15" y2="8" />
-        <line x1="7" y1="11" x2="12" y2="11" />
+    icon: (a: boolean) => (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+        stroke={a ? '#FAC71E' : 'rgba(240,238,232,0.3)'} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
       </svg>
     ),
   },
   {
     href: '/profile',
-    label: 'Profile',
-    icon: (active: boolean) => (
-      <svg width="22" height="22" viewBox="0 0 22 22" fill="none" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
-        stroke={active ? '#FAC71E' : 'rgba(240,238,232,0.25)'}>
-        <circle cx="11" cy="7" r="4" />
-        <path d="M2 20c0-4.418 4.03-8 9-8s9 3.582 9 8" />
+    label: 'Perfil',
+    icon: (a: boolean) => (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+        stroke={a ? '#FAC71E' : 'rgba(240,238,232,0.3)'} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="8" r="4"/>
+        <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
       </svg>
     ),
   },
@@ -58,31 +56,34 @@ export default function BottomNav() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 flex justify-around"
+      className="fixed bottom-0 left-0 right-0 z-50 flex justify-around items-center"
       style={{
-        background: 'rgba(10,10,15,0.92)',
+        background: 'rgba(9,9,16,0.88)',
         borderTop: '0.5px solid rgba(255,255,255,0.07)',
-        backdropFilter: 'blur(12px)',
-        WebkitBackdropFilter: 'blur(12px)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
         paddingTop: '10px',
-        paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))',
+        paddingBottom: 'calc(14px + env(safe-area-inset-bottom, 0px))',
       }}
     >
-      {tabs.map(({ href, label, icon }) => {
+      {NAV.map(({ href, label, icon }) => {
         const active = pathname === href || pathname.startsWith(href + '/');
         return (
           <Link
             key={href}
             href={href}
             id={`nav-${label.toLowerCase()}`}
-            className="flex flex-col items-center gap-1"
+            className="flex flex-col items-center gap-1.5"
             aria-label={label}
           >
             {icon(active)}
-            {/* Dot indicator */}
             <span
-              className="block w-1 h-1 rounded-full bg-[#FAC71E]"
-              style={{ opacity: active ? 1 : 0, transition: 'opacity 0.15s ease' }}
+              className="block w-1 h-1 rounded-full"
+              style={{
+                background: '#FAC71E',
+                opacity: active ? 1 : 0,
+                transition: 'opacity 0.2s ease',
+              }}
             />
           </Link>
         );
