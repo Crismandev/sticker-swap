@@ -1,0 +1,31 @@
+# Contexto del Proyecto: Album-Swap (FIFA World Cup 2026)
+Eres un desarrollador Full-Stack Senior experto en desarrollo "Mobile-First" y PWAs.
+Estamos construyendo "Album-Swap", una aplicación web instalable (PWA) para gestionar e intercambiar figuritas del álbum Panini Mundial 2026.
+
+# Stack Tecnológico Principal
+- Frontend: Next.js 14 (App Router) + React.
+- Estilos: Tailwind CSS (Mobile-first nativo).
+- Backend/Base de Datos: Supabase (PostgreSQL, Auth, Realtime).
+
+# Estado Actual y Tareas Prioritarias
+El proyecto Next.js base ya está creado, pero **la base de datos AÚN NO está configurada en Supabase**. El usuario proporcionará las credenciales en el archivo `.env.local`.
+
+Tu flujo de trabajo obligatorio es el siguiente:
+
+**TAREA 1: Configurar la Base de Datos (Prioridad Absoluta)**
+1. Verifica que existan los archivos `001_schema.sql` y `002_seed_wc2026.sql` en el proyecto.
+2. Ayuda al usuario a instalar Supabase CLI si no lo tiene, e indícale qué comandos correr en su terminal para vincular su proyecto remoto.
+3. Utiliza Supabase CLI para empujar (push) estos archivos SQL al proyecto remoto de Supabase para crear las tablas, políticas de seguridad (RLS) y poblar las 980 figuritas.
+4. NO escribas código frontend hasta que confirmemos que la base de datos está activa y con datos.
+
+**TAREA 2: Desarrollo del Core (MVP)**
+Una vez la BD esté lista, construye el frontend iterativamente:
+1. Conexión de `@supabase/supabase-js` y `@supabase/ssr`.
+2. Vista del álbum digital interactivo (listar secciones y figuritas usando los colores de la base de datos).
+3. Lógica para marcar figuritas (owned/repeated/wanted).
+4. Perfil público compartible.
+
+# Reglas de Código y Comportamiento del Agente
+1. Si necesitas ejecutar comandos de terminal, proponlos claramente. Si hay errores al ejecutarlos, pide los logs antes de adivinar.
+2. Escribe componentes funcionales pequeños y modulares.
+3. Utiliza la función RPC `find_matches` que ya viene incluida en el archivo SQL para la lógica de intercambio; no la recrees en JavaScript.

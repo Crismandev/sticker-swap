@@ -1,7 +1,3 @@
-<!-- BEGIN:nextjs-agent-rules -->
-# This is NOT the Next.js you know
-
-
 # Prompt Maestro — UI/UX Sticker Swap App
 ## FIFA World Cup 2026 · Next.js + Tailwind · Dark Mode Premium
 
@@ -399,7 +395,7 @@ Modal inner: bg #12121a, border 0.5px rgba verde 0.3, border-radius 20px
 ## PANTALLA 3 — `/profile` (Perfil Compartible)
 
 ### Concepto
-P�gina pública accesible por link `app.com/u/[token]`. No requiere login para ver.
+P�gina pública accesible por link `app.com/u/[token]`. No requiere login para ver.
 
 ### Layout
 ```
@@ -596,6 +592,3 @@ Antes de considerar el trabajo completo, verificar:
 - [ ] Cero box-shadows (excepto el glow del punto de progress bar)
 - [ ] Cero colores hardcoded en blanco o gris genérico
 - [ ] Todos los datos de ejemplo usan jugadores y equipos reales del Mundial 2026
-
-
-<!-- END:nextjs-agent-rules -->

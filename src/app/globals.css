@@ -1,26 +1,165 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap');
 @import "tailwindcss";
 
+/* ============================================================
+   DESIGN TOKENS
+   ============================================================ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --color-bg-base:        #0a0a0f;
+  --color-bg-card:        #12121a;
+  --color-bg-surface:     rgba(255,255,255,0.04);
+  --color-border:         rgba(255,255,255,0.08);
+  --color-border-hover:   rgba(255,255,255,0.14);
+
+  --color-gold:           #FAC71E;
+  --color-gold-dim:       rgba(250,199,30,0.12);
+  --color-gold-border:    rgba(250,199,30,0.25);
+
+  --color-owned:          #4ade80;
+  --color-owned-dim:      rgba(74,222,128,0.08);
+  --color-repeated:       #FAC71E;
+  --color-missing:        rgba(240,238,232,0.15);
+  --color-foil:           rgba(192,160,255,0.6);
+
+  --color-accept:         #4ade80;
+  --color-reject:         #fb7185;
+
+  --color-text-primary:   #f0eee8;
+  --color-text-secondary: rgba(240,238,232,0.45);
+  --color-text-hint:      rgba(240,238,232,0.25);
+
+  --radius-card:          20px;
+  --radius-chip:          10px;
+  --radius-pill:          99px;
+  --radius-button:        12px;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* ============================================================
+   RESET & BASE
+   ============================================================ */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html, body {
+  height: 100%;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-bg-base);
+  color: var(--color-text-primary);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================================
+   TYPOGRAPHY
+   ============================================================ */
+.font-display {
+  font-family: 'Bebas Neue', sans-serif;
+  letter-spacing: 0.04em;
+}
+
+/* ============================================================
+   GRID BACKGROUND
+   ============================================================ */
+.grid-bg {
+  position: relative;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.022) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.022) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+/* ============================================================
+   SCROLLBAR HIDE
+   ============================================================ */
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ============================================================
+   ANIMATIONS
+   ============================================================ */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.35; }
+}
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes toastOut {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(8px); }
+}
+
+@keyframes matchModalIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.animate-pulse-dot {
+  animation: pulse-dot 1.8s ease infinite;
+}
+
+.animate-toast-in {
+  animation: toastIn 0.2s ease forwards;
+}
+
+.animate-toast-out {
+  animation: toastOut 0.2s ease forwards;
+}
+
+.animate-match-modal {
+  animation: matchModalIn 0.35s cubic-bezier(.34,1.56,.64,1) forwards;
+}
+
+/* ============================================================
+   CARD TRANSITION (swipe)
+   ============================================================ */
+.card-transition {
+  transition: transform 0.35s cubic-bezier(.34,1.56,.64,1), opacity 0.25s ease;
+}
+
+.card-hover-transition {
+  transition: all 0.15s ease;
+}
+
+/* ============================================================
+   STICKER CARD STATES
+   ============================================================ */
+.sticker-wanted {
+  background: rgba(255,255,255,0.03);
+  border-color: rgba(255,255,255,0.07);
+}
+
+.sticker-owned {
+  background: rgba(74,222,128,0.06);
+  border-color: rgba(74,222,128,0.35);
+}
+
+.sticker-repeated {
+  background: rgba(250,199,30,0.06);
+  border-color: rgba(250,199,30,0.4);
+}
+
+.sticker-foil {
+  border-color: rgba(192,160,255,0.5);
+  background: linear-gradient(135deg, rgba(192,160,255,0.08) 0%, rgba(255,255,255,0.03) 100%);
+}
+
+/* ============================================================
+   BOTTOM NAV SAFE AREA
+   ============================================================ */
+.bottom-nav-pad {
+  padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
 }
