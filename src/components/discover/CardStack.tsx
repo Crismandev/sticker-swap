@@ -87,7 +87,11 @@ const CardStack = forwardRef<CardStackHandle, {
     return (
       <div className="animate-modal-in mx-4">
         <MatchModal
-          profile={matchedProfile}
+          profile={{
+            name: matchedProfile.name,
+            give: matchedProfile.giveCodes,
+            get: matchedProfile.getCodes
+          }}
           onChat={() => setMatched(null)}
           onSkip={() => { setMatched(null); }}
         />
