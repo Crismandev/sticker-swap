@@ -298,102 +298,32 @@ export default function ProfilePage() {
             />
             <Avatar initials={initials} size={88} colorIndex={4} />
           </div>
-
-          {isEditing ? (
-            <div className="w-full max-w-xs mt-4 flex flex-col gap-2.5 bg-[#12121e] p-4 border border-[rgba(255,255,255,0.06)] rounded-2xl">
-              <div>
-                <label className="text-[10px] uppercase tracking-wider text-[rgba(240,238,232,0.3)] block mb-1">
-                  Nombre de pantalla
-                </label>
-                <input
-                  type="text"
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  className="w-full px-3 py-2 bg-[#1b1b2a] border border-[rgba(255,255,255,0.08)] rounded-xl text-sm font-body focus:outline-none focus:border-[#FAC71E] text-[#f0eee8]"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <div className="flex justify-between items-center mb-1">
-                    <label className="text-[10px] uppercase tracking-wider text-[rgba(240,238,232,0.3)] block">
-                      Ciudad
-                    </label>
-                    <button
-                      type="button"
-                      onClick={handleDetectLocation}
-                      disabled={detectingLocation}
-                      className="text-[9px] font-bold text-[#FFCB2F] hover:underline disabled:opacity-40"
-                    >
-                      {detectingLocation ? '📍 Buscando...' : '📍 Auto'}
-                    </button>
-                  </div>
-                  <input
-                    type="text"
-                    value={editCity}
-                    onChange={(e) => setEditCity(e.target.value)}
-                    className="w-full px-3 py-2 bg-[#1b1b2a] border border-[rgba(255,255,255,0.08)] rounded-xl text-sm font-body focus:outline-none focus:border-[#FAC71E] text-[#f0eee8]"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] uppercase tracking-wider text-[rgba(240,238,232,0.3)] block mb-1">
-                    País (ISO)
-                  </label>
-                  <input
-                    type="text"
-                    value={editCountry}
-                    maxLength={2}
-                    onChange={(e) => setEditCountry(e.target.value.toUpperCase())}
-                    className="w-full px-3 py-2 bg-[#1b1b2a] border border-[rgba(255,255,255,0.08)] rounded-xl text-sm font-body text-center focus:outline-none focus:border-[#FAC71E] text-[#f0eee8]"
-                  />
-                </div>
-              </div>
-
-              <div className="flex gap-2 mt-2">
-                <button
-                  onClick={() => setIsEditing(false)}
-                  disabled={saving}
-                  className="flex-1 py-2 text-xs font-semibold rounded-lg bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.06)] active:scale-95 transition-all"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={handleSaveProfile}
-                  disabled={saving || !editName.trim()}
-                  className="flex-1 py-2 text-xs font-semibold rounded-lg bg-[#FAC71E] text-[#0a0a0f] active:scale-95 transition-all disabled:opacity-40"
-                >
-                  {saving ? 'Guardando...' : 'Guardar'}
-                </button>
-              </div>
+          <div className="text-center mt-4">
+            <div className="flex items-center justify-center gap-2 mb-1.5">
+              <h1 className="font-display text-[30px] leading-none" style={{ color: '#f0eee8' }}>
+                {displayName.toUpperCase()}
+              </h1>
+              <button
+                onClick={() => setIsEditing(true)}
+                className="p-1.5 opacity-55 hover:opacity-100 transition-all flex items-center justify-center rounded-lg active:scale-90"
+                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+              >
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 20h9" />
+                  <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                </svg>
+              </button>
             </div>
-          ) : (
-            <div className="text-center mt-4">
-              <div className="flex items-center justify-center gap-2 mb-1.5">
-                <h1 className="font-display text-[30px] leading-none" style={{ color: '#f0eee8' }}>
-                  {displayName.toUpperCase()}
-                </h1>
-                <button
-                  onClick={() => setIsEditing(true)}
-                  className="p-1.5 opacity-50 hover:opacity-100 transition-all flex items-center justify-center rounded-lg"
-                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
-                >
-                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 20h9" />
-                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-                  </svg>
-                </button>
-              </div>
-              <p className="text-[13px] font-body flex items-center justify-center gap-1.5" style={{ color: 'rgba(240,238,232,0.40)' }}>
-                <span style={{ color: 'rgba(255,203,47,0.7)' }}>@{username}</span>
-                {city && (
-                  <>
-                    <span style={{ color: 'rgba(240,238,232,0.2)' }}>·</span>
-                    <span>📍 {city}, {country}</span>
-                  </>
-                )}
-              </p>
-            </div>
-          )}
+            <p className="text-[13px] font-body flex items-center justify-center gap-1.5" style={{ color: 'rgba(240,238,232,0.40)' }}>
+              <span style={{ color: 'rgba(255,203,47,0.7)' }}>@{username}</span>
+              {city && (
+                <>
+                  <span style={{ color: 'rgba(240,238,232,0.2)' }}>·</span>
+                  <span>📍 {city}, {country}</span>
+                </>
+              )}
+            </p>
+          </div>
         </div>
 
         <ProgressBar owned={stats.owned} total={stats.total} />
@@ -405,52 +335,50 @@ export default function ProfilePage() {
         />
 
         {/* Action buttons */}
-        {!isEditing && (
-          <div className="flex flex-col gap-2.5 mt-5 relative z-10">
-            <Link
-              href="/discover"
-              id="profile-swap-btn"
-              className="w-full py-3.5 text-[15px] font-body font-bold flex items-center justify-center gap-2 rounded-[14px] transition-all active:scale-[0.97]"
+        <div className="flex flex-col gap-2.5 mt-5 relative z-10">
+          <Link
+            href="/discover"
+            id="profile-swap-btn"
+            className="w-full py-3.5 text-[15px] font-body font-bold flex items-center justify-center gap-2 rounded-[14px] transition-all active:scale-[0.97]"
+            style={{
+              background: '#FFCB2F',
+              color: '#08080e',
+              boxShadow: '0 4px 20px rgba(255,203,47,0.30)',
+            }}
+          >
+            <span>Intercambiar</span>
+            <span className="text-[18px]">🔥</span>
+          </Link>
+          <div className="flex gap-2.5">
+            <button
+              onClick={handleCopyLink}
+              id="profile-share-btn"
+              className="flex-1 py-3 text-[13px] font-body font-medium flex items-center justify-center gap-1.5 card-hover-transition rounded-[14px]"
               style={{
-                background: '#FFCB2F',
-                color: '#08080e',
-                boxShadow: '0 4px 20px rgba(255,203,47,0.30)',
+                background: 'rgba(255,255,255,0.03)',
+                border: '1px solid rgba(255,255,255,0.09)',
+                color: 'rgba(240,238,232,0.65)',
               }}
             >
-              <span>Intercambiar</span>
-              <span className="text-[18px]">🔥</span>
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                <path d="M4 12v2a2 2 0 002 2h8a2 2 0 002-2V6a2 2 0 00-2-2h-2M10 4V2a2 2 0 00-2-2H2a2 2 0 00-2 2v8a2 2 0 002 2h2" />
+              </svg>
+              Copiar enlace
+            </button>
+            <Link
+              href="/album/quick"
+              className="flex-1 py-3 text-[13px] font-body font-semibold flex items-center justify-center gap-1.5 rounded-[14px] transition-all active:scale-[0.97]"
+              style={{
+                background: 'rgba(255,203,47,0.08)',
+                border: '1px solid rgba(255,203,47,0.22)',
+                color: '#FFCB2F',
+              }}
+            >
+              <span className="text-[16px]">⚡</span>
+              Carga rápida
             </Link>
-            <div className="flex gap-2.5">
-              <button
-                onClick={handleCopyLink}
-                id="profile-share-btn"
-                className="flex-1 py-3 text-[13px] font-body font-medium flex items-center justify-center gap-1.5 card-hover-transition rounded-[14px]"
-                style={{
-                  background: 'rgba(255,255,255,0.03)',
-                  border: '1px solid rgba(255,255,255,0.09)',
-                  color: 'rgba(240,238,232,0.65)',
-                }}
-              >
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-                  <path d="M4 12v2a2 2 0 002 2h8a2 2 0 002-2V6a2 2 0 00-2-2h-2M10 4V2a2 2 0 00-2-2H2a2 2 0 00-2 2v8a2 2 0 002 2h2" />
-                </svg>
-                Copiar enlace
-              </button>
-              <Link
-                href="/album/quick"
-                className="flex-1 py-3 text-[13px] font-body font-semibold flex items-center justify-center gap-1.5 rounded-[14px] transition-all active:scale-[0.97]"
-                style={{
-                  background: 'rgba(255,203,47,0.08)',
-                  border: '1px solid rgba(255,203,47,0.22)',
-                  color: '#FFCB2F',
-                }}
-              >
-                <span className="text-[16px]">⚡</span>
-                Carga rápida
-              </Link>
-            </div>
           </div>
-        )}
+        </div>
       </div>
 
       {/* Repeated section */}
@@ -526,6 +454,104 @@ export default function ProfilePage() {
           </div>
         )}
       </div>
+
+      {/* Profile Edit Bottom Sheet Modal */}
+      {isEditing && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/75 backdrop-blur-[6px] animate-fade-in"
+            onClick={() => setIsEditing(false)}
+          />
+          {/* Bottom Sheet */}
+          <div className="relative w-full max-w-md bg-[#0f0f1c] border-t border-[rgba(255,255,255,0.12)] rounded-t-[32px] p-6 pb-8 animate-slide-up z-10 flex flex-col gap-5 shadow-2xl">
+            {/* Grabber indicator */}
+            <div className="w-12 h-1.5 bg-[rgba(255,255,255,0.15)] rounded-full mx-auto" />
+            
+            <div className="flex items-center justify-between">
+              <h3 className="font-display text-[22px] tracking-wide text-[#f0eee8] uppercase">
+                Editar Perfil
+              </h3>
+              <button
+                onClick={() => setIsEditing(false)}
+                className="w-8 h-8 rounded-full flex items-center justify-center bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.08)] text-[rgba(240,238,232,0.6)] active:scale-90 transition-all"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-4">
+              <div>
+                <label className="text-[10px] uppercase tracking-wider text-[rgba(240,238,232,0.4)] block mb-1.5 font-bold font-body">
+                  Nombre de pantalla
+                </label>
+                <input
+                  type="text"
+                  maxLength={25}
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="w-full max-w-sm px-4 py-3 bg-[#161625] border border-[rgba(255,255,255,0.08)] rounded-xl text-sm font-body focus:outline-none focus:border-[#FFCB2F] text-[#f0eee8]"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 max-w-sm">
+                <div>
+                  <div className="flex justify-between items-center mb-1.5">
+                    <label className="text-[10px] uppercase tracking-wider text-[rgba(240,238,232,0.4)] block font-bold font-body">
+                      Ciudad
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleDetectLocation}
+                      disabled={detectingLocation}
+                      className="text-[9px] font-bold text-[#FFCB2F] hover:underline disabled:opacity-40"
+                    >
+                      {detectingLocation ? '📍 Buscando...' : '📍 Auto'}
+                    </button>
+                  </div>
+                  <input
+                    type="text"
+                    maxLength={30}
+                    value={editCity}
+                    onChange={(e) => setEditCity(e.target.value)}
+                    className="w-full px-4 py-3 bg-[#161625] border border-[rgba(255,255,255,0.08)] rounded-xl text-sm font-body focus:outline-none focus:border-[#FFCB2F] text-[#f0eee8]"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] uppercase tracking-wider text-[rgba(240,238,232,0.4)] block mb-1.5 font-bold font-body">
+                    País (ISO)
+                  </label>
+                  <input
+                    type="text"
+                    value={editCountry}
+                    maxLength={2}
+                    onChange={(e) => setEditCountry(e.target.value.toUpperCase())}
+                    className="w-full px-4 py-3 bg-[#161625] border border-[rgba(255,255,255,0.08)] rounded-xl text-sm font-body text-center focus:outline-none focus:border-[#FFCB2F] text-[#f0eee8]"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-4">
+              <button
+                onClick={() => setIsEditing(false)}
+                disabled={saving}
+                className="flex-1 py-3 text-sm font-semibold rounded-xl bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.08)] active:scale-95 transition-all text-[rgba(240,238,232,0.7)]"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSaveProfile}
+                disabled={saving || !editName.trim()}
+                className="flex-1 py-3 text-sm font-semibold rounded-xl bg-[#FFCB2F] text-[#08080e] active:scale-95 transition-all disabled:opacity-40 flex items-center justify-center gap-2"
+                style={{ boxShadow: '0 4px 16px rgba(255,203,47,0.2)' }}
+              >
+                {saving ? 'Guardando...' : 'Guardar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Toast Alert */}
       {toast && (
