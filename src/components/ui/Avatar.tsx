@@ -1,9 +1,9 @@
 const AVATAR_COLORS = [
   ['#3b82f6', '#1d4ed8'],  // blue
   ['#a855f7', '#7e22ce'],  // purple
-  ['#4ade80', '#15803d'],  // green
+  ['#2ED573', '#15803d'],  // green
   ['#f97316', '#c2410c'],  // coral
-  ['#FAC71E', '#d97706'],  // gold
+  ['#FFCB2F', '#d97706'],  // gold
   ['#ec4899', '#be185d'],  // pink
 ];
 

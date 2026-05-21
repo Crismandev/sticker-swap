@@ -10,9 +10,9 @@ export type CardStackHandle = {
 };
 
 const STACK_TRANSFORMS = [
-  { scale: 1, y: 0, opacity: 1, z: 3 },
-  { scale: 0.95, y: 14, opacity: 0.55, z: 2 },
-  { scale: 0.90, y: 28, opacity: 0.28, z: 1 },
+  { scale: 1,    y: 0,  opacity: 1,    z: 3 },
+  { scale: 0.94, y: 16, opacity: 0.50, z: 2 },
+  { scale: 0.88, y: 32, opacity: 0.24, z: 1 },
 ];
 
 const CardStack = forwardRef<CardStackHandle, {
@@ -103,20 +103,22 @@ const CardStack = forwardRef<CardStackHandle, {
   if (remaining.length === 0) {
     return (
       <div
-        className="flex flex-col items-center justify-center gap-3 mx-4"
+        className="flex flex-col items-center justify-center gap-4 mx-4"
         style={{
-          height: 420,
-          background: 'rgba(255,255,255,0.02)',
-          border: '0.5px solid rgba(255,255,255,0.06)',
-          borderRadius: 20,
+          height: 'min(520px, 65vh)',
+          background: 'linear-gradient(180deg, rgba(255,203,47,0.04) 0%, rgba(255,255,255,0.01) 100%)',
+          border: '1px solid rgba(255,255,255,0.07)',
+          borderRadius: 22,
         }}
       >
-        <span style={{ fontSize: 44 }}>🎴</span>
-        <p className="font-display text-[22px]" style={{ color: 'rgba(240,238,232,0.2)' }}>
+        <div className="animate-float text-[56px] leading-none" style={{ filter: 'drop-shadow(0 0 16px rgba(255,203,47,0.3))' }}>🎴</div>
+        <p className="font-display text-[24px]" style={{ color: 'rgba(240,238,232,0.20)' }}>
           SIN CANDIDATOS
         </p>
-        <p className="text-[12px] text-center px-10 leading-relaxed" style={{ color: 'rgba(240,238,232,0.28)' }}>
-          Marca más figuritas como <span style={{ color: '#FAC71E' }}>repetidas</span> para encontrar con quién intercambiar
+        <p className="text-[13px] text-center px-10 leading-relaxed font-body" style={{ color: 'rgba(240,238,232,0.32)' }}>
+          Marca más figuritas como{' '}
+          <span style={{ color: '#FFCB2F', fontWeight: 600 }}>repetidas</span>{' '}
+          para encontrar con quién intercambiar
         </p>
       </div>
     );
@@ -140,7 +142,7 @@ const CardStack = forwardRef<CardStackHandle, {
   };
 
   return (
-    <div className="relative mx-4" style={{ height: 420, userSelect: 'none', touchAction: 'none' }}>
+    <div className="relative mx-4" style={{ height: 'min(520px, 65vh)', userSelect: 'none', touchAction: 'none' }}>
       {/* Back cards */}
       {remaining.slice(1, 3).map((profile, i) => {
         const t = STACK_TRANSFORMS[i + 1] ?? STACK_TRANSFORMS[2];
@@ -169,15 +171,15 @@ const CardStack = forwardRef<CardStackHandle, {
         {/* Swipe overlays */}
         {tintAccept > 0 && (
           <div
-            className="absolute inset-0 flex items-center justify-center rounded-[20px] pointer-events-none"
+            className="absolute inset-0 flex items-center justify-center rounded-[22px] pointer-events-none"
             style={{
-              background: `rgba(74,222,128,${tintAccept * 0.22})`,
-              border: `2px solid rgba(74,222,128,${tintAccept * 0.9})`,
+              background: `rgba(46,213,115,${tintAccept * 0.22})`,
+              border: `2px solid rgba(46,213,115,${tintAccept * 0.9})`,
             }}
           >
             <span
-              className="font-display text-[44px]"
-              style={{ color: `rgba(74,222,128,${tintAccept})`, transform: 'rotate(-18deg)', textShadow: '0 0 24px rgba(74,222,128,0.4)' }}
+              className="font-display text-[48px]"
+              style={{ color: `rgba(46,213,115,${tintAccept})`, transform: 'rotate(-18deg)', textShadow: '0 0 28px rgba(46,213,115,0.5)' }}
             >
               SÍ ✓
             </span>
@@ -185,15 +187,15 @@ const CardStack = forwardRef<CardStackHandle, {
         )}
         {tintReject > 0 && (
           <div
-            className="absolute inset-0 flex items-center justify-center rounded-[20px] pointer-events-none"
+            className="absolute inset-0 flex items-center justify-center rounded-[22px] pointer-events-none"
             style={{
-              background: `rgba(251,113,133,${tintReject * 0.22})`,
-              border: `2px solid rgba(251,113,133,${tintReject * 0.9})`,
+              background: `rgba(255,71,87,${tintReject * 0.22})`,
+              border: `2px solid rgba(255,71,87,${tintReject * 0.9})`,
             }}
           >
             <span
-              className="font-display text-[44px]"
-              style={{ color: `rgba(251,113,133,${tintReject})`, transform: 'rotate(18deg)', textShadow: '0 0 24px rgba(251,113,133,0.4)' }}
+              className="font-display text-[48px]"
+              style={{ color: `rgba(255,71,87,${tintReject})`, transform: 'rotate(18deg)', textShadow: '0 0 28px rgba(255,71,87,0.5)' }}
             >
               NO ✕
             </span>

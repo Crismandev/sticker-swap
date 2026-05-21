@@ -236,20 +236,27 @@ export default function ProfilePage() {
   const initials = displayName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || 'U';
 
   return (
-    <div className="relative min-h-screen pb-20 bg-[#0a0a0f] text-[#f0eee8] nav-pad">
+    <div className="relative min-h-screen pb-20 bg-[#08080e] text-[#f0eee8] nav-pad">
       {/* Profile Header */}
       <div
-        className="px-4 pb-6 pt-8 relative overflow-hidden"
+        className="px-5 pb-6 pt-10 relative overflow-hidden"
         style={{
-          background: 'linear-gradient(180deg, #12121a 0%, #0a0a0f 100%)',
-          borderBottom: '0.5px solid rgba(255,255,255,0.06)',
+          background: 'linear-gradient(180deg, #161628 0%, #08080e 100%)',
+          borderBottom: '1px solid rgba(255,255,255,0.07)',
         }}
       >
-        {/* Glow */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-72 h-72 bg-[#FAC71E]/5 rounded-full blur-3xl pointer-events-none" />
+        {/* Stadium glow + decorative ring */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-80 h-80 rounded-full blur-3xl pointer-events-none" style={{ background: 'radial-gradient(ellipse, rgba(255,203,47,0.07) 0%, transparent 70%)' }} />
 
         <div className="flex flex-col items-center mb-5 relative z-10">
-          <Avatar initials={initials} size={72} colorIndex={4} />
+          {/* Avatar with gold pulsing ring */}
+          <div className="relative mb-1">
+            <div
+              className="absolute inset-0 rounded-full animate-glow-pulse"
+              style={{ margin: -4, borderRadius: '50%', border: '2px solid rgba(255,203,47,0.45)' }}
+            />
+            <Avatar initials={initials} size={88} colorIndex={4} />
+          </div>
 
           {isEditing ? (
             <div className="w-full max-w-xs mt-4 flex flex-col gap-2.5 bg-[#12121e] p-4 border border-[rgba(255,255,255,0.06)] rounded-2xl">
@@ -309,14 +316,15 @@ export default function ProfilePage() {
               </div>
             </div>
           ) : (
-            <div className="text-center mt-3">
-              <div className="flex items-center justify-center gap-2">
-                <h1 className="font-display text-[26px] leading-none text-[#f0eee8]">
+            <div className="text-center mt-4">
+              <div className="flex items-center justify-center gap-2 mb-1.5">
+                <h1 className="font-display text-[30px] leading-none" style={{ color: '#f0eee8' }}>
                   {displayName.toUpperCase()}
                 </h1>
                 <button
                   onClick={() => setIsEditing(true)}
-                  className="p-1.5 opacity-55 hover:opacity-100 transition-all flex items-center justify-center bg-[rgba(255,255,255,0.04)] rounded-lg border border-[rgba(255,255,255,0.06)]"
+                  className="p-1.5 opacity-50 hover:opacity-100 transition-all flex items-center justify-center rounded-lg"
+                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
                 >
                   <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M12 20h9" />
@@ -324,11 +332,11 @@ export default function ProfilePage() {
                   </svg>
                 </button>
               </div>
-              <p className="text-[12px] mt-1.5 font-body text-[rgba(240,238,232,0.4)] flex items-center justify-center gap-1">
-                <span>@{username}</span>
+              <p className="text-[13px] font-body flex items-center justify-center gap-1.5" style={{ color: 'rgba(240,238,232,0.40)' }}>
+                <span style={{ color: 'rgba(255,203,47,0.7)' }}>@{username}</span>
                 {city && (
                   <>
-                    <span>•</span>
+                    <span style={{ color: 'rgba(240,238,232,0.2)' }}>·</span>
                     <span>📍 {city}, {country}</span>
                   </>
                 )}
@@ -347,35 +355,49 @@ export default function ProfilePage() {
 
         {/* Action buttons */}
         {!isEditing && (
-          <div className="flex flex-col gap-2 mt-4 relative z-10">
-            <div className="flex gap-2">
+          <div className="flex flex-col gap-2.5 mt-5 relative z-10">
+            <Link
+              href="/discover"
+              id="profile-swap-btn"
+              className="w-full py-3.5 text-[15px] font-body font-bold flex items-center justify-center gap-2 rounded-[14px] transition-all active:scale-[0.97]"
+              style={{
+                background: '#FFCB2F',
+                color: '#08080e',
+                boxShadow: '0 4px 20px rgba(255,203,47,0.30)',
+              }}
+            >
+              <span>Intercambiar</span>
+              <span className="text-[18px]">🔥</span>
+            </Link>
+            <div className="flex gap-2.5">
               <button
                 onClick={handleCopyLink}
                 id="profile-share-btn"
-                className="flex-1 py-3 text-sm font-body font-medium flex items-center justify-center gap-1.5 card-hover-transition bg-[rgba(255,255,255,0.02)] border border-[rgba(255,255,255,0.08)] rounded-xl"
+                className="flex-1 py-3 text-[13px] font-body font-medium flex items-center justify-center gap-1.5 card-hover-transition rounded-[14px]"
                 style={{
-                  color: '#f0eee8',
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(255,255,255,0.09)',
+                  color: 'rgba(240,238,232,0.65)',
                 }}
               >
                 <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
                   <path d="M4 12v2a2 2 0 002 2h8a2 2 0 002-2V6a2 2 0 00-2-2h-2M10 4V2a2 2 0 00-2-2H2a2 2 0 00-2 2v8a2 2 0 002 2h2" />
                 </svg>
-                Copiar Enlace
+                Copiar enlace
               </button>
               <Link
-                href="/discover"
-                id="profile-swap-btn"
-                className="flex-1 py-3 text-sm font-body font-semibold flex items-center justify-center gap-1.5 bg-[#FAC71E] text-[#0a0a0f] rounded-xl transition-all active:scale-[0.98]"
+                href="/album/quick"
+                className="flex-1 py-3 text-[13px] font-body font-semibold flex items-center justify-center gap-1.5 rounded-[14px] transition-all active:scale-[0.97]"
+                style={{
+                  background: 'rgba(255,203,47,0.08)',
+                  border: '1px solid rgba(255,203,47,0.22)',
+                  color: '#FFCB2F',
+                }}
               >
-                <span>Intercambiar 🔥</span>
+                <span className="text-[16px]">⚡</span>
+                Carga rápida
               </Link>
             </div>
-            <Link
-              href="/album/quick"
-              className="w-full py-2.5 rounded-xl text-xs font-body font-medium flex items-center justify-center gap-1.5 transition-all bg-[rgba(250,199,30,0.06)] border border-[rgba(250,199,30,0.2)] text-[#FAC71E] hover:bg-[rgba(250,199,30,0.1)] active:scale-[0.99]"
-            >
-              <span>⚡ Carga Rápida (Listas de Códigos)</span>
-            </Link>
           </div>
         )}
       </div>
