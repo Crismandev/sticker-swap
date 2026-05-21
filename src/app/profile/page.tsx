@@ -56,6 +56,7 @@ export default function ProfilePage() {
   const [editCity, setEditCity] = useState('');
   const [editCountry, setEditCountry] = useState('PE');
   const [saving, setSaving] = useState(false);
+  const [detectingLocation, setDetectingLocation] = useState(false);
 
   // Stats
   const [stats, setStats] = useState({
@@ -202,6 +203,57 @@ export default function ProfilePage() {
     }
   };
 
+  const handleDetectLocation = () => {
+    if (!navigator.geolocation) {
+      setToast('Geolocalización no soportada');
+      setTimeout(() => setToast(null), 2000);
+      return;
+    }
+
+    setDetectingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const { latitude, longitude } = position.coords;
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10`,
+            {
+              headers: {
+                'Accept-Language': 'es',
+              },
+            }
+          );
+          if (!res.ok) throw new Error('Query failed');
+          const data = await res.json();
+          if (data && data.address) {
+            const detectedCity = data.address.city || data.address.town || data.address.village || data.address.suburb || '';
+            const detectedCountry = data.address.country_code ? data.address.country_code.toUpperCase() : 'PE';
+            if (detectedCity) setEditCity(detectedCity);
+            setEditCountry(detectedCountry);
+            setToast('📍 ¡Ubicación detectada!');
+            setTimeout(() => setToast(null), 2000);
+          } else {
+            setToast('No se reconoció la zona');
+            setTimeout(() => setToast(null), 2000);
+          }
+        } catch (err) {
+          console.error(err);
+          setToast('Error al buscar ciudad');
+          setTimeout(() => setToast(null), 2000);
+        } finally {
+          setDetectingLocation(false);
+        }
+      },
+      (err) => {
+        console.error(err);
+        setToast('Permiso de ubicación denegado');
+        setTimeout(() => setToast(null), 2000);
+        setDetectingLocation(false);
+      },
+      { timeout: 8000 }
+    );
+  };
+
   const handleCopyLink = () => {
     if (!shareToken) return;
     const url = `${window.location.origin}/profile/${shareToken}`;
@@ -263,9 +315,19 @@ export default function ProfilePage() {
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="text-[10px] uppercase tracking-wider text-[rgba(240,238,232,0.3)] block mb-1">
-                    Ciudad
-                  </label>
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="text-[10px] uppercase tracking-wider text-[rgba(240,238,232,0.3)] block">
+                      Ciudad
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleDetectLocation}
+                      disabled={detectingLocation}
+                      className="text-[9px] font-bold text-[#FFCB2F] hover:underline disabled:opacity-40"
+                    >
+                      {detectingLocation ? '📍 Buscando...' : '📍 Auto'}
+                    </button>
+                  </div>
                   <input
                     type="text"
                     value={editCity}

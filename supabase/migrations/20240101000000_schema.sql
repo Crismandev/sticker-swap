@@ -157,6 +157,7 @@ RETURNS TABLE (
 )
 LANGUAGE SQL
 STABLE
+SECURITY DEFINER
 AS $$
   SELECT
     u.id                                                           AS user_id,

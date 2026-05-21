@@ -59,14 +59,30 @@ export default function DiscoverPage() {
       setUserId(user.id);
 
       try {
-        // 1. Call find_matches RPC
+        console.log('[Discover] Loading matches for user:', user.id);
+
+        // 1. Verify user has repeated stickers at all
+        const { data: myRepeated, error: repErr } = await supabase
+          .from('user_stickers')
+          .select('id', { count: 'exact', head: false })
+          .eq('user_id', user.id)
+          .eq('status', 'repeated');
+
+        console.log('[Discover] My repeated stickers:', myRepeated?.length ?? 0, repErr || '');
+
+        // 2. Call find_matches RPC
         const { data: matches, error } = await supabase
           .rpc('find_matches', {
             current_user_id: user.id,
             album_id_filter: ALBUM_ID,
           });
 
-        if (error) throw error;
+        console.log('[Discover] find_matches result:', matches?.length ?? 0, 'matches | error:', error || 'none');
+
+        if (error) {
+          console.error('[Discover] RPC error:', error);
+          throw error;
+        }
 
         if (!matches || matches.length === 0) {
           setProfiles([]);
