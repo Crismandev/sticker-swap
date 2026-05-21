@@ -60,7 +60,7 @@ export default function BottomNav() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 flex justify-around items-end"
+      className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md z-50 flex justify-around items-end"
       style={{
         background: 'rgba(8,8,14,0.92)',
         borderTop: '1px solid rgba(255,255,255,0.07)',
