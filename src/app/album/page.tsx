@@ -374,15 +374,15 @@ export default function AlbumPage() {
           </Link>
         </div>
 
-        <div className="px-5 mb-2">
+        <div className="px-5" style={{ paddingLeft: '20px', paddingRight: '20px', marginBottom: '12px' }}>
           <ProgressBar owned={totalOwned} total={totalStickers} />
         </div>
-        <div className="px-5 mb-4">
+        <div className="px-5" style={{ paddingLeft: '20px', paddingRight: '20px', marginBottom: '20px' }}>
           <StatsRow owned={totalOwned} repeated={totalRepeated} missing={totalMissing} />
         </div>
 
         {/* Quick manage list button */}
-        <div className="px-5 mb-6">
+        <div className="px-5" style={{ paddingLeft: '20px', paddingRight: '20px', marginBottom: '24px' }}>
           <Link
             href="/album/quick"
             className="w-full py-3.5 rounded-2xl text-[13px] font-body font-bold flex items-center justify-center gap-2 transition-all bg-[rgba(250,199,30,0.08)] border border-[rgba(250,199,30,0.25)] text-[#FAC71E] hover:bg-[rgba(250,199,30,0.12)] active:scale-[0.98] shadow-sm shadow-[#FAC71E]/5"
@@ -392,7 +392,7 @@ export default function AlbumPage() {
           </Link>
         </div>
 
-        <div className="mx-5 mb-6 h-px" style={{ background: 'linear-gradient(90deg, rgba(255,255,255,0.08), transparent)' }} />
+        <div className="mx-5 h-px" style={{ marginLeft: '20px', marginRight: '20px', marginBottom: '24px', background: 'linear-gradient(90deg, rgba(255,255,255,0.08), transparent)' }} />
 
         <div className="px-1">
           <SectionMenu sections={SECTIONS} statusMap={statusMap} onSelect={handleSelect} />

@@ -80,7 +80,7 @@ export default function ProfilePage() {
     const { data: profile } = await supabase
       .from('users')
       .select('username, display_name, city, country, share_token')
-      .eq('user_id', uid)
+      .eq('id', uid)
       .single();
 
     if (profile) {
@@ -187,7 +187,7 @@ export default function ProfilePage() {
         country: editCountry.trim(),
         updated_at: new Date().toISOString(),
       })
-      .eq('user_id', userId);
+      .eq('id', userId);
 
     setSaving(false);
     if (error) {
@@ -315,7 +315,7 @@ export default function ProfilePage() {
               </button>
             </div>
             <p className="text-[13px] font-body flex items-center justify-center gap-1.5" style={{ color: 'rgba(240,238,232,0.40)' }}>
-              <span style={{ color: 'rgba(255,203,47,0.7)' }}>@{username}</span>
+              <span style={{ color: 'rgba(255,203,47,0.7)' }}>@{username || 'usuario'}</span>
               {city && (
                 <>
                   <span style={{ color: 'rgba(240,238,232,0.2)' }}>·</span>
@@ -335,7 +335,7 @@ export default function ProfilePage() {
         />
 
         {/* Action buttons */}
-        <div className="flex flex-col gap-2.5 mt-5 relative z-10">
+        <div className="flex flex-col relative z-10" style={{ marginTop: '20px', gap: '10px' }}>
           <Link
             href="/discover"
             id="profile-swap-btn"
@@ -349,7 +349,7 @@ export default function ProfilePage() {
             <span>Intercambiar</span>
             <span className="text-[18px]">🔥</span>
           </Link>
-          <div className="flex gap-2.5">
+          <div className="flex" style={{ gap: '10px' }}>
             <button
               onClick={handleCopyLink}
               id="profile-share-btn"
