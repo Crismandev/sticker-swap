@@ -1,32 +1,18 @@
 'use client';
 
+import { useState, useEffect, useMemo } from 'react';
+import { createClient } from '@/lib/supabase/client';
 import Avatar from '@/components/ui/Avatar';
 import CodeChip from '@/components/ui/CodeChip';
 import ProgressBar from '@/components/album/ProgressBar';
 import StatsRow from '@/components/album/StatsRow';
+import Link from 'next/link';
 
-const MOCK_USER = {
-  name: 'Carlos Mendoza',
-  initials: 'CM',
-  city: 'Lima',
-  country: 'PE',
-  owned: 340,
-  repeated: 48,
-  missing: 592,
-  total: 980,
+type TeamGroup = {
+  team: string;
+  flag: string;
+  codes: string[];
 };
-
-const REPEATED_BY_TEAM: { team: string; flag: string; codes: string[] }[] = [
-  { team: 'Argentina', flag: '🇦🇷', codes: ['ARG3', 'ARG7', 'ARG17'] },
-  { team: 'Brasil',    flag: '🇧🇷', codes: ['BRA9', 'BRA14'] },
-  { team: 'Francia',   flag: '🇫🇷', codes: ['FRA5', 'FRA20'] },
-];
-
-const MISSING_BY_TEAM: { team: string; flag: string; codes: string[] }[] = [
-  { team: 'España',    flag: '🇪🇸', codes: ['ESP15', 'ESP7'] },
-  { team: 'Alemania',  flag: '🇩🇪', codes: ['GER11', 'GER4'] },
-  { team: 'Colombia',  flag: '🇨🇴', codes: ['COL14'] },
-];
 
 function SectionGroup({
   team, flag, codes, variant,
@@ -47,75 +33,357 @@ function SectionGroup({
         <span className="text-[11px] font-body" style={{ color: 'rgba(240,238,232,0.25)' }}>{codes.length}</span>
       </div>
       <div className="flex flex-wrap gap-1.5 px-1">
-        {codes.map(c => <CodeChip key={c} code={c} variant={variant} />)}
+        {codes.map(c => {
+          return <CodeChip key={c} code={c} variant={variant} />;
+        })}
       </div>
     </div>
   );
 }
 
 export default function ProfilePage() {
+  const [userId, setUserId] = useState<string | null>(null);
+  const [username, setUsername] = useState('');
+  const [displayName, setDisplayName] = useState('');
+  const [city, setCity] = useState('');
+  const [country, setCountry] = useState('PE');
+  const [shareToken, setShareToken] = useState('');
+
+  // Editing state
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editCity, setEditCity] = useState('');
+  const [editCountry, setEditCountry] = useState('PE');
+  const [saving, setSaving] = useState(false);
+
+  // Stats
+  const [stats, setStats] = useState({
+    owned: 0,
+    repeated: 0,
+    missing: 980,
+    total: 980,
+  });
+
+  // Dynamic sticker lists
+  const [repeatedList, setRepeatedList] = useState<TeamGroup[]>([]);
+  const [missingList, setMissingList] = useState<TeamGroup[]>([]);
+
+  const [toast, setToast] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const fetchProfileAndStats = async (uid: string) => {
+    const supabase = createClient();
+
+    // 1. Fetch profile info
+    const { data: profile } = await supabase
+      .from('users')
+      .select('username, display_name, city, country, share_token')
+      .eq('user_id', uid)
+      .single();
+
+    if (profile) {
+      setUsername(profile.username || '');
+      setDisplayName(profile.display_name || '');
+      setCity(profile.city || '');
+      setCountry(profile.country || 'PE');
+      setShareToken(profile.share_token || '');
+
+      setEditName(profile.display_name || '');
+      setEditCity(profile.city || '');
+      setEditCountry(profile.country || 'PE');
+    }
+
+    // 2. Fetch owned statistics count
+    const { count: ownedCount } = await supabase
+      .from('user_stickers')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', uid)
+      .in('status', ['owned', 'repeated']);
+
+    // 3. Fetch repeated statistics count (sum of quantities)
+    const { data: repeatedRows } = await supabase
+      .from('user_stickers')
+      .select('quantity')
+      .eq('user_id', uid)
+      .eq('status', 'repeated');
+
+    const repCount = (repeatedRows || []).reduce((acc, row) => acc + (row.quantity || 1), 0);
+    const ownCount = ownedCount || 0;
+
+    setStats({
+      owned: ownCount,
+      repeated: repCount,
+      missing: Math.max(0, 980 - ownCount),
+      total: 980,
+    });
+
+    // 4. Fetch repeated stickers grouping by section
+    const { data: repeatedStickers } = await supabase
+      .from('user_stickers')
+      .select('quantity, stickers(code, name, sections(name, flag_emoji))')
+      .eq('user_id', uid)
+      .eq('status', 'repeated');
+
+    // 5. Fetch missing (wanted) stickers grouping by section
+    const { data: wantedStickers } = await supabase
+      .from('user_stickers')
+      .select('stickers(code, name, sections(name, flag_emoji))')
+      .eq('user_id', uid)
+      .eq('status', 'wanted');
+
+    // Helper to group by team
+    const groupByTeam = (data: any[]): TeamGroup[] => {
+      const groups: Record<string, { flag: string; codes: string[] }> = {};
+      data?.forEach(row => {
+        const sticker = Array.isArray(row.stickers) ? row.stickers[0] : row.stickers;
+        if (!sticker) return;
+        const section = sticker.sections || sticker.sections?.[0];
+        const teamName = section?.name || 'Especial';
+        const flag = section?.flag_emoji || '🏆';
+
+        if (!groups[teamName]) {
+          groups[teamName] = { flag, codes: [] };
+        }
+        const q = row.quantity && row.quantity > 1 ? ` (x${row.quantity})` : '';
+        groups[teamName].codes.push(`${sticker.code}${q}`);
+      });
+
+      return Object.entries(groups).map(([team, val]) => ({
+        team,
+        flag: val.flag,
+        codes: val.codes.sort(),
+      }));
+    };
+
+    setRepeatedList(groupByTeam(repeatedStickers || []));
+    setMissingList(groupByTeam(wantedStickers || []));
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+      setUserId(user.id);
+      fetchProfileAndStats(user.id);
+    });
+  }, []);
+
+  const handleSaveProfile = async () => {
+    if (!userId || !editName.trim()) return;
+    setSaving(true);
+
+    const supabase = createClient();
+    const { error } = await supabase
+      .from('users')
+      .update({
+        display_name: editName.trim(),
+        city: editCity.trim(),
+        country: editCountry.trim(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('user_id', userId);
+
+    setSaving(false);
+    if (error) {
+      setToast('Error al guardar el perfil');
+      setTimeout(() => setToast(null), 2000);
+    } else {
+      setDisplayName(editName.trim());
+      setCity(editCity.trim());
+      setCountry(editCountry.trim());
+      setIsEditing(false);
+      setToast('¡Perfil actualizado con éxito!');
+      setTimeout(() => setToast(null), 2000);
+    }
+  };
+
+  const handleCopyLink = () => {
+    if (!shareToken) return;
+    const url = `${window.location.origin}/profile/${shareToken}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setToast('¡Enlace de perfil copiado!');
+      setTimeout(() => setToast(null), 2000);
+    }).catch(() => {
+      setToast('Error al copiar el enlace');
+      setTimeout(() => setToast(null), 2000);
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#0a0a0f]">
+        <div className="animate-pulse-dot w-2 h-2 rounded-full" style={{ background: '#FAC71E' }} />
+      </div>
+    );
+  }
+
+  if (!userId) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-[#0a0a0f] p-4 text-center">
+        <span className="text-4xl">🔐</span>
+        <p className="font-display text-[22px] text-[#f0eee8]">INICIA SESIÓN PARA VER TU PERFIL</p>
+        <Link href="/login" className="px-6 py-3 bg-[#FAC71E] text-[#0a0a0f] font-semibold rounded-xl text-sm transition-all active:scale-[0.98]">
+          Iniciar sesión
+        </Link>
+      </div>
+    );
+  }
+
+  const initials = displayName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || 'U';
+
   return (
-    <div className="relative min-h-screen">
-      {/* Hero */}
+    <div className="relative min-h-screen pb-20 bg-[#0a0a0f] text-[#f0eee8] nav-pad">
+      {/* Profile Header */}
       <div
-        className="px-4 pb-4 pt-8"
+        className="px-4 pb-6 pt-8 relative overflow-hidden"
         style={{
-          background: '#12121a',
-          borderBottom: '0.5px solid rgba(255,255,255,0.07)',
+          background: 'linear-gradient(180deg, #12121a 0%, #0a0a0f 100%)',
+          borderBottom: '0.5px solid rgba(255,255,255,0.06)',
         }}
       >
-        <div className="flex flex-col items-center mb-4">
-          <Avatar initials={MOCK_USER.initials} size={64} colorIndex={0} />
-          <h1 className="font-display text-[28px] leading-none mt-3" style={{ color: '#f0eee8' }}>
-            {MOCK_USER.name.toUpperCase()}
-          </h1>
-          <p className="text-[12px] mt-1 font-body" style={{ color: 'rgba(240,238,232,0.25)' }}>
-            📍 {MOCK_USER.city}, {MOCK_USER.country}
-          </p>
+        {/* Glow */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-72 h-72 bg-[#FAC71E]/5 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="flex flex-col items-center mb-5 relative z-10">
+          <Avatar initials={initials} size={72} colorIndex={4} />
+
+          {isEditing ? (
+            <div className="w-full max-w-xs mt-4 flex flex-col gap-2.5 bg-[#12121e] p-4 border border-[rgba(255,255,255,0.06)] rounded-2xl">
+              <div>
+                <label className="text-[10px] uppercase tracking-wider text-[rgba(240,238,232,0.3)] block mb-1">
+                  Nombre de pantalla
+                </label>
+                <input
+                  type="text"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="w-full px-3 py-2 bg-[#1b1b2a] border border-[rgba(255,255,255,0.08)] rounded-xl text-sm font-body focus:outline-none focus:border-[#FAC71E] text-[#f0eee8]"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[10px] uppercase tracking-wider text-[rgba(240,238,232,0.3)] block mb-1">
+                    Ciudad
+                  </label>
+                  <input
+                    type="text"
+                    value={editCity}
+                    onChange={(e) => setEditCity(e.target.value)}
+                    className="w-full px-3 py-2 bg-[#1b1b2a] border border-[rgba(255,255,255,0.08)] rounded-xl text-sm font-body focus:outline-none focus:border-[#FAC71E] text-[#f0eee8]"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] uppercase tracking-wider text-[rgba(240,238,232,0.3)] block mb-1">
+                    País (ISO)
+                  </label>
+                  <input
+                    type="text"
+                    value={editCountry}
+                    maxLength={2}
+                    onChange={(e) => setEditCountry(e.target.value.toUpperCase())}
+                    className="w-full px-3 py-2 bg-[#1b1b2a] border border-[rgba(255,255,255,0.08)] rounded-xl text-sm font-body text-center focus:outline-none focus:border-[#FAC71E] text-[#f0eee8]"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-2 mt-2">
+                <button
+                  onClick={() => setIsEditing(false)}
+                  disabled={saving}
+                  className="flex-1 py-2 text-xs font-semibold rounded-lg bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.06)] active:scale-95 transition-all"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleSaveProfile}
+                  disabled={saving || !editName.trim()}
+                  className="flex-1 py-2 text-xs font-semibold rounded-lg bg-[#FAC71E] text-[#0a0a0f] active:scale-95 transition-all disabled:opacity-40"
+                >
+                  {saving ? 'Guardando...' : 'Guardar'}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center mt-3">
+              <div className="flex items-center justify-center gap-2">
+                <h1 className="font-display text-[26px] leading-none text-[#f0eee8]">
+                  {displayName.toUpperCase()}
+                </h1>
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="p-1.5 opacity-55 hover:opacity-100 transition-all flex items-center justify-center bg-[rgba(255,255,255,0.04)] rounded-lg border border-[rgba(255,255,255,0.06)]"
+                >
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 20h9" />
+                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                  </svg>
+                </button>
+              </div>
+              <p className="text-[12px] mt-1.5 font-body text-[rgba(240,238,232,0.4)] flex items-center justify-center gap-1">
+                <span>@{username}</span>
+                {city && (
+                  <>
+                    <span>•</span>
+                    <span>📍 {city}, {country}</span>
+                  </>
+                )}
+              </p>
+            </div>
+          )}
         </div>
 
-        <ProgressBar owned={MOCK_USER.owned} total={MOCK_USER.total} />
+        <ProgressBar owned={stats.owned} total={stats.total} />
 
         <StatsRow
-          owned={MOCK_USER.owned}
-          repeated={MOCK_USER.repeated}
-          missing={MOCK_USER.missing}
+          owned={stats.owned}
+          repeated={stats.repeated}
+          missing={stats.missing}
         />
 
         {/* Action buttons */}
-        <div className="flex gap-2 mt-2">
-          <button
-            id="profile-share-btn"
-            className="flex-1 py-2.5 text-sm font-body font-medium card-hover-transition"
-            style={{
-              border: '0.5px solid rgba(250,199,30,0.4)',
-              color: '#FAC71E',
-              borderRadius: '12px',
-              background: 'transparent',
-            }}
-          >
-            ↗ Compartir perfil
-          </button>
-          <button
-            id="profile-swap-btn"
-            className="flex-1 py-2.5 text-sm font-body font-medium card-hover-transition"
-            style={{
-              background: '#FAC71E',
-              color: '#0a0a0f',
-              borderRadius: '12px',
-              border: 'none',
-              fontWeight: 600,
-            }}
-          >
-            Intercambiar
-          </button>
-        </div>
+        {!isEditing && (
+          <div className="flex flex-col gap-2 mt-4 relative z-10">
+            <div className="flex gap-2">
+              <button
+                onClick={handleCopyLink}
+                id="profile-share-btn"
+                className="flex-1 py-3 text-sm font-body font-medium flex items-center justify-center gap-1.5 card-hover-transition bg-[rgba(255,255,255,0.02)] border border-[rgba(255,255,255,0.08)] rounded-xl"
+                style={{
+                  color: '#f0eee8',
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                  <path d="M4 12v2a2 2 0 002 2h8a2 2 0 002-2V6a2 2 0 00-2-2h-2M10 4V2a2 2 0 00-2-2H2a2 2 0 00-2 2v8a2 2 0 002 2h2" />
+                </svg>
+                Copiar Enlace
+              </button>
+              <Link
+                href="/discover"
+                id="profile-swap-btn"
+                className="flex-1 py-3 text-sm font-body font-semibold flex items-center justify-center gap-1.5 bg-[#FAC71E] text-[#0a0a0f] rounded-xl transition-all active:scale-[0.98]"
+              >
+                <span>Intercambiar 🔥</span>
+              </Link>
+            </div>
+            <Link
+              href="/album/quick"
+              className="w-full py-2.5 rounded-xl text-xs font-body font-medium flex items-center justify-center gap-1.5 transition-all bg-[rgba(250,199,30,0.06)] border border-[rgba(250,199,30,0.2)] text-[#FAC71E] hover:bg-[rgba(250,199,30,0.1)] active:scale-[0.99]"
+            >
+              <span>⚡ Carga Rápida (Listas de Códigos)</span>
+            </Link>
+          </div>
+        )}
       </div>
 
       {/* Repeated section */}
-      <div className="px-4 pt-5">
+      <div className="px-4 pt-6">
         <div className="flex items-center gap-2 mb-4">
-          <h2 className="font-display text-[20px] leading-none" style={{ color: '#f0eee8' }}>
+          <h2 className="font-display text-[18px] tracking-wide text-[#f0eee8]">
             DISPONIBLES PARA INTERCAMBIO
           </h2>
           <span
@@ -127,20 +395,33 @@ export default function ProfilePage() {
               borderRadius: '10px',
             }}
           >
-            {REPEATED_BY_TEAM.reduce((s, g) => s + g.codes.length, 0)}
+            {repeatedList.reduce((s, g) => s + g.codes.length, 0)}
           </span>
         </div>
 
-        {REPEATED_BY_TEAM.map(g => (
-          <SectionGroup key={g.team} {...g} variant="give" />
-        ))}
+        {repeatedList.length > 0 ? (
+          repeatedList.map(g => (
+            <SectionGroup key={g.team} {...g} variant="give" />
+          ))
+        ) : (
+          <div
+            className="px-4 py-8 text-center border border-dashed border-[rgba(255,255,255,0.06)] rounded-2xl"
+            style={{ background: 'rgba(255,255,255,0.01)' }}
+          >
+            <span className="text-3xl block mb-2">🃏</span>
+            <p className="text-xs text-[rgba(240,238,232,0.35)]">No tienes cromos repetidos marcados aún.</p>
+            <Link href="/album" className="mt-2 inline-block text-xs font-semibold text-[#FAC71E] underline">
+              Ir a mi Álbum
+            </Link>
+          </div>
+        )}
       </div>
 
       {/* Missing section */}
-      <div className="px-4 pt-3 pb-6">
+      <div className="px-4 pt-6 pb-10">
         <div className="flex items-center gap-2 mb-4">
-          <h2 className="font-display text-[20px] leading-none" style={{ color: '#f0eee8' }}>
-            ME FALTAN
+          <h2 className="font-display text-[18px] tracking-wide text-[#f0eee8]">
+            ME FALTAN (EN MI LISTA DE DESEOS)
           </h2>
           <span
             className="text-[11px] font-body font-medium px-2 py-0.5"
@@ -151,13 +432,46 @@ export default function ProfilePage() {
               borderRadius: '10px',
             }}
           >
-            {MISSING_BY_TEAM.reduce((s, g) => s + g.codes.length, 0)}
+            {missingList.reduce((s, g) => s + g.codes.length, 0)}
           </span>
         </div>
 
-        {MISSING_BY_TEAM.map(g => (
-          <SectionGroup key={g.team} {...g} variant="get" />
-        ))}
+        {missingList.length > 0 ? (
+          missingList.map(g => (
+            <SectionGroup key={g.team} {...g} variant="get" />
+          ))
+        ) : (
+          <div
+            className="px-4 py-8 text-center border border-dashed border-[rgba(255,255,255,0.06)] rounded-2xl"
+            style={{ background: 'rgba(255,255,255,0.01)' }}
+          >
+            <span className="text-3xl block mb-2">📋</span>
+            <p className="text-xs text-[rgba(240,238,232,0.35)]">No has agregado cromos a tu lista de deseos.</p>
+            <Link href="/album" className="mt-2 inline-block text-xs font-semibold text-[#fb7185] underline">
+              Ir a mi Álbum
+            </Link>
+          </div>
+        )}
+      </div>
+
+      {/* Toast Alert */}
+      {toast && (
+        <div
+          className="fixed bottom-24 left-1/2 -translate-x-1/2 animate-toast-in z-50 px-4 py-2.5 text-xs font-body font-medium whitespace-nowrap"
+          style={{
+            background: '#14141c',
+            border: '0.5px solid rgba(255,255,255,0.1)',
+            borderRadius: '99px',
+            color: '#FAC71E',
+          }}
+        >
+          {toast}
+        </div>
+      )}
+
+      {/* Signature */}
+      <div className="flex justify-center items-center py-6 opacity-35">
+        <span className="text-[10px] tracking-widest text-[#f0eee8] font-mono">pixelia - crisman</span>
       </div>
     </div>
   );

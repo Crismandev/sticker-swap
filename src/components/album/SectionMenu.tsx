@@ -11,7 +11,7 @@ type Section = {
   type?: 'team' | 'special';
 };
 
-type StatusMap = Record<string, StickerStatus>;
+type StatusMap = Record<string, StickerStatus | { status: StickerStatus; quantity?: number }>;
 
 function MiniBar({ pct, color }: { pct: number; color: string }) {
   return (
@@ -122,10 +122,22 @@ export default function SectionMenu({
 
   const getOwned    = (code: string, total: number) =>
     Array.from({ length: total }, (_, i) => `${code}${i + 1}`)
-      .filter(id => statusMap[id] === 'owned').length;
+      .filter(id => {
+        const entry = statusMap[id] as any;
+        if (!entry) return false;
+        const status = typeof entry === 'string' ? entry : entry.status;
+        return status === 'owned' || status === 'repeated';
+      }).length;
+
   const getRepeated = (code: string, total: number) =>
     Array.from({ length: total }, (_, i) => `${code}${i + 1}`)
-      .filter(id => statusMap[id] === 'repeated').length;
+      .reduce((acc, id) => {
+        const entry = statusMap[id] as any;
+        if (!entry) return acc;
+        const status = typeof entry === 'string' ? entry : entry.status;
+        const quantity = typeof entry === 'string' ? 1 : (entry.quantity ?? 1);
+        return acc + (status === 'repeated' ? quantity : 0);
+      }, 0);
 
   return (
     <div className="px-4 pb-4">

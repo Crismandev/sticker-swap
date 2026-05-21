@@ -8,6 +8,7 @@ import ProgressBar from '@/components/album/ProgressBar';
 import StatsRow from '@/components/album/StatsRow';
 import StickerGrid, { type StickerStatus } from '@/components/album/StickerGrid';
 import FilterPills from '@/components/album/FilterPills';
+import QuantityModal from '@/components/album/QuantityModal';
 
 // ============================================================
 // ALL 49 SECTIONS — matches the seed_wc2026.sql data exactly
@@ -110,7 +111,7 @@ const STICKER_NAMES: Record<string, string[]> = {
   COL: ['Escudo','D. Ospina','C. Vargas','Y. Mina','D. Sánchez','J. Arias','E. Sinisterra','J. Lerma','M. Cabal','L. Díaz','R. Falcao','J. Cuadrado','Foto Equipo','R. Mojica','S. Mina','F. Reyes','M. Ríos','A. Correa','J. Durán','L. Bonilla'],
   GHA: ['Escudo','L. Ati Zigi','J. Danlad','D. Amartey','A. Djiku','B. Mensah','A. Sulemana','T. Partey','M. Kudus','S. Kyereh','J. Ayew','A. Ayew','Foto Equipo','T. Antwi','I. Paintsil','A. Semenyo','G. Bediako','S. Opoku','K. Opoku','R. Tamakloe'],
   PAN: ['Escudo','L. Mejía','V. Penedo','M. Murillo','R. Miller','A. Murillo','A. Muñoz','R. Torres','A. Rodríguez','É. Davis','R. Córdoba','B. White','Foto Equipo','A. Asprilla','I. Gaitán','C. Ávila','J. Murillo','A. Tejada','M. Dovikas','R. Ortiz'],
-  CRO: ['Escudo','D. Livaković','I. Gvardiol','D. Lovren','J. Šutalo','B. Sosa','J. Vrsaljko','L. Modrić','M. Kovačić','M. Brozović','I. Perišić','B. Kramarić','Foto Equipo','N. Vlašić','J. Pašalić','A. Budimir','L. Ivanušec','M. Oršić','M. Čavar','T. Šutalo'],
+  CRO: ['Escudo','D. Livaković','I. Gvardiol','D. Lovren','J. Šutalo','B. Sosa','J. Vrsaljko','L. Modrić','M. Kovačić','M. Brozoviç','I. Perišić','B. Kramarić','Foto Equipo','N. Vlašić','J. Pašalić','A. Budimir','L. Ivanušec','M. Oršić','M. Čavar','T. Šutalo'],
   COD: ['Escudo','O. Mvuama','B. Lokwa','D. Mbemba','G. Ngadeu','M. Boyata','J. Tisserand','D. Bolasie','C. Masuaku','P. Mpoku','D. Bakambu','M. Mbokani','Foto Equipo','Z. Mounie','B. Nsimba','G. Wissa','S. Nkuutu','B. Eboa','C. Tshimanga','P. Loba'],
   ENG: ['Escudo','J. Pickford','D. Henderson','J. Stones','T. Alexander-Arnold','L. Shaw','C. Gallagher','M. Guehi','L. Colwill','D. Rice','K. Mainoo','P. Foden','Foto Equipo','J. Bellingham','M. Rashford','B. Saka','A. Gordon','O. Watkins','C. Palmer','H. Kane'],
 };
@@ -148,9 +149,15 @@ export default function AlbumPage() {
   const [view, setView]             = useState<View>('menu');
   const [activeCode, setActiveCode] = useState('MEX');
   const [filter, setFilter]         = useState<'all' | 'owned' | 'missing'>('all');
-  const [statusMap, setStatusMap]   = useState<Record<string, StickerStatus>>({});
+  const [statusMap, setStatusMap]   = useState<Record<string, { status: StickerStatus; quantity: number }>>({});
   const [toast, setToast]           = useState<Toast>(null);
   const [userId, setUserId]         = useState<string | null>(null);
+
+  // ── Quantity Modal State ───────────────────────────────
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedStickerId, setSelectedStickerId] = useState('');
+  const [selectedStickerName, setSelectedStickerName] = useState('');
+  const [selectedQuantity, setSelectedQuantity] = useState(1);
 
   // ── Load user session + stickers from Supabase ────────
   useEffect(() => {
@@ -163,16 +170,16 @@ export default function AlbumPage() {
       // Load all user_stickers joined with sticker codes
       supabase
         .from('user_stickers')
-        .select('status, stickers(code)')
+        .select('status, quantity, stickers(code)')
         .eq('user_id', user.id)
         .then(({ data }) => {
           if (!data) return;
-          const map: Record<string, StickerStatus> = {};
+          const map: Record<string, { status: StickerStatus; quantity: number }> = {};
           data.forEach((row: any) => {
             const code = Array.isArray(row.stickers)
               ? row.stickers[0]?.code
               : row.stickers?.code;
-            if (code) map[code] = row.status as StickerStatus;
+            if (code) map[code] = { status: row.status as StickerStatus, quantity: row.quantity || 1 };
           });
           setStatusMap(map);
         });
@@ -180,27 +187,43 @@ export default function AlbumPage() {
   }, []);
 
   // ── Totals ────────────────────────────────────────────
-  const totalOwned    = useMemo(() => Object.values(statusMap).filter(s => s === 'owned').length, [statusMap]);
-  const totalRepeated = useMemo(() => Object.values(statusMap).filter(s => s === 'repeated').length, [statusMap]);
+  const totalOwned    = useMemo(() => Object.values(statusMap).filter(s => s.status === 'owned' || s.status === 'repeated').length, [statusMap]);
+  const totalRepeated = useMemo(() => Object.values(statusMap).reduce((acc, s) => acc + (s.status === 'repeated' ? s.quantity : 0), 0), [statusMap]);
   const totalStickers = SECTIONS.reduce((s, t) => s + t.total, 0);
-  const totalMissing  = totalStickers - totalOwned - totalRepeated;
+  const totalMissing  = totalStickers - totalOwned;
 
   // ── Active section ────────────────────────────────────
   const activeSection = SECTIONS.find(s => s.code === activeCode)!;
   const allStickers   = useMemo(() => generateStickers(activeCode, activeSection.total), [activeCode, activeSection.total]);
 
-  const sectionOwned    = allStickers.filter(s => statusMap[s.id] === 'owned').length;
-  const sectionRepeated = allStickers.filter(s => statusMap[s.id] === 'repeated').length;
-  const sectionMissing  = activeSection.total - sectionOwned - sectionRepeated;
+  const sectionOwned    = allStickers.filter(s => {
+    const entry = statusMap[s.id];
+    return entry?.status === 'owned' || entry?.status === 'repeated';
+  }).length;
+  const sectionRepeated = allStickers.reduce((acc, s) => {
+    const entry = statusMap[s.id];
+    return acc + (entry?.status === 'repeated' ? entry.quantity : 0);
+  }, 0);
+  const sectionMissing  = activeSection.total - sectionOwned;
   const sectionPct      = Math.round((sectionOwned / activeSection.total) * 100);
 
   const filtered = filter === 'owned'
-    ? allStickers.filter(s => statusMap[s.id] === 'owned' || statusMap[s.id] === 'repeated')
+    ? allStickers.filter(s => {
+        const status = statusMap[s.id]?.status;
+        return status === 'owned' || status === 'repeated';
+      })
     : filter === 'missing'
-    ? allStickers.filter(s => !statusMap[s.id] || statusMap[s.id] === 'wanted')
+    ? allStickers.filter(s => {
+        const status = statusMap[s.id]?.status;
+        return !status || status === 'wanted';
+      })
     : allStickers;
 
-  const stickerData = filtered.map(s => ({ ...s, status: statusMap[s.id] }));
+  const stickerData = filtered.map(s => ({
+    ...s,
+    status: statusMap[s.id]?.status ?? ('wanted' as StickerStatus),
+    quantity: statusMap[s.id]?.quantity ?? 1
+  }));
 
   // ── Handlers ──────────────────────────────────────────
   const handleSelect = (code: string) => {
@@ -214,9 +237,12 @@ export default function AlbumPage() {
     setFilter('all');
   };
 
-  const handleStatusChange = useCallback(async (id: string, status: StickerStatus) => {
+  const handleStatusChange = useCallback(async (id: string, status: StickerStatus, quantity: number = 1) => {
     // Optimistic update
-    setStatusMap(prev => ({ ...prev, [id]: status }));
+    setStatusMap(prev => ({
+      ...prev,
+      [id]: { status, quantity }
+    }));
     setToast({ ...TOAST_MESSAGES[status], key: Date.now() });
     setTimeout(() => setToast(null), 1800);
 
@@ -244,11 +270,26 @@ export default function AlbumPage() {
       await supabase
         .from('user_stickers')
         .upsert(
-          { user_id: userId, sticker_id: stickerRow.id, status, quantity: 1 },
+          { user_id: userId, sticker_id: stickerRow.id, status, quantity },
           { onConflict: 'user_id,sticker_id' }
         );
     }
   }, [userId]);
+
+  const handleOpenQuantityModal = useCallback((id: string, name: string, status: StickerStatus, quantity: number) => {
+    setSelectedStickerId(id);
+    setSelectedStickerName(name);
+    setSelectedQuantity(quantity);
+    setModalOpen(true);
+  }, []);
+
+  const handleSaveQuantity = useCallback((quantity: number) => {
+    handleStatusChange(selectedStickerId, 'repeated', quantity);
+  }, [selectedStickerId, handleStatusChange]);
+
+  const handleSetStatusFromModal = useCallback((status: 'owned' | 'wanted') => {
+    handleStatusChange(selectedStickerId, status, 1);
+  }, [selectedStickerId, handleStatusChange]);
 
   // ── Section hero colors ────────────────────────────────
   const c1 = activeSection.color;
@@ -296,9 +337,24 @@ export default function AlbumPage() {
         <ProgressBar owned={totalOwned} total={totalStickers} />
         <StatsRow owned={totalOwned} repeated={totalRepeated} missing={totalMissing} />
 
+        {/* Quick manage list button */}
+        <div className="px-4 mb-4">
+          <Link
+            href="/album/quick"
+            className="w-full py-2.5 rounded-xl text-xs font-body font-medium flex items-center justify-center gap-1.5 transition-all bg-[rgba(250,199,30,0.06)] border border-[rgba(250,199,30,0.2)] text-[#FAC71E] hover:bg-[rgba(250,199,30,0.1)] active:scale-[0.99]"
+          >
+            <span>⚡ Carga Rápida (Listas de Códigos)</span>
+          </Link>
+        </div>
+
         <div className="mx-4 mb-4 h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
 
         <SectionMenu sections={SECTIONS} statusMap={statusMap} onSelect={handleSelect} />
+
+        {/* Signature */}
+        <div className="flex justify-center items-center py-8 opacity-45">
+          <span className="text-[10px] tracking-widest text-[#f0eee8] font-mono">pixelia - crisman</span>
+        </div>
       </div>
     );
   }
@@ -486,7 +542,16 @@ export default function AlbumPage() {
         </div>
 
         {/* Sticker grid */}
-        <StickerGrid stickers={stickerData} onStatusChange={handleStatusChange} />
+        <StickerGrid
+          stickers={stickerData}
+          onStatusChange={handleStatusChange}
+          onOpenQuantityModal={handleOpenQuantityModal}
+        />
+
+        {/* Signature */}
+        <div className="flex justify-center items-center py-10 opacity-30">
+          <span className="text-[10px] tracking-widest text-[#f0eee8] font-mono">pixelia - crisman</span>
+        </div>
       </div>
 
       {/* ── TOAST ───────────────────────────────────────────── */}
@@ -504,6 +569,17 @@ export default function AlbumPage() {
           {toast.text}
         </div>
       )}
+
+      {/* Quantity Modal */}
+      <QuantityModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        stickerId={selectedStickerId}
+        stickerName={selectedStickerName}
+        initialQuantity={selectedQuantity}
+        onSave={handleSaveQuantity}
+        onSetStatus={handleSetStatusFromModal}
+      />
     </div>
   );
 }

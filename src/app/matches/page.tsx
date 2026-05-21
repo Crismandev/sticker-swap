@@ -130,9 +130,10 @@ export default function MatchesPage() {
           {matches.map((m) => {
             const st = statusLabel[m.status] ?? statusLabel.pending;
             return (
-              <div
+              <Link
+                href={`/matches/${m.id}`}
                 key={m.id}
-                className="flex items-center gap-3 transition-state"
+                className="flex items-center gap-3 card-hover-transition active:scale-[0.99]"
                 style={{
                   background: '#111119',
                   border: '0.5px solid rgba(255,255,255,0.08)',
@@ -176,11 +177,16 @@ export default function MatchesPage() {
                     <p className="text-[9px] uppercase mt-0.5" style={{ color: 'rgba(240,238,232,0.25)' }}>RECIBES</p>
                   </div>
                 </div>
-              </div>
+              </Link>
             );
           })}
         </div>
       )}
+
+      {/* Signature */}
+      <div className="flex justify-center items-center py-10 opacity-30 mt-6">
+        <span className="text-[10px] tracking-widest text-[#f0eee8] font-mono">pixelia - crisman</span>
+      </div>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import CardStack, { type CardStackHandle } from '@/components/discover/CardStack';
 import ActionButtons from '@/components/discover/ActionButtons';
@@ -40,6 +41,7 @@ export default function DiscoverPage() {
   const [loadState, setLoadState]   = useState<LoadState>('idle');
   const [matchCount, setMatchCount] = useState(0);
   const [userId, setUserId]         = useState<string | null>(null);
+  const [matchPopup, setMatchPopup] = useState<MatchProfile | null>(null);
 
   /* ── Load matches from Supabase ── */
   useEffect(() => {
@@ -138,16 +140,41 @@ export default function DiscoverPage() {
     if (!userId) return;
     const supabase = createClient();
 
-    await supabase.from('swap_matches').upsert({
-      user_a_id:    userId,
-      user_b_id:    profile.userId,
-      match_score:  profile.score,
-      can_give:     profile.canGive,
-      can_receive:  profile.canReceive,
-      status:       'pending',
-    }, { onConflict: 'user_a_id,user_b_id', ignoreDuplicates: true });
+    // Check if there is an existing match record between these two users in either direction
+    const { data: existingMatch } = await supabase
+      .from('swap_matches')
+      .select('*')
+      .or(`and(user_a_id.eq.${userId},user_b_id.eq.${profile.userId}),and(user_a_id.eq.${profile.userId},user_b_id.eq.${userId})`)
+      .maybeSingle();
 
-    setMatchCount(prev => prev + 1);
+    if (existingMatch) {
+      // If the other user already liked this user (it is pending and user_a_id is the other user)
+      if (existingMatch.status === 'pending' && existingMatch.user_a_id === profile.userId) {
+        // Mutual Match! Update status to accepted
+        await supabase
+          .from('swap_matches')
+          .update({
+            status: 'accepted',
+            match_score: profile.score,
+            can_give: profile.canGive,
+            can_receive: profile.canReceive,
+          })
+          .eq('id', existingMatch.id);
+
+        setMatchPopup(profile);
+        setMatchCount(prev => prev + 1);
+      }
+    } else {
+      // First user to swipe right: insert pending row
+      await supabase.from('swap_matches').insert({
+        user_a_id:    userId,
+        user_b_id:    profile.userId,
+        match_score:  profile.score,
+        can_give:     profile.canGive,
+        can_receive:  profile.canReceive,
+        status:       'pending',
+      });
+    }
   }, [userId]);
 
   const handleReject = useCallback((_profile: MatchProfile) => {
@@ -234,6 +261,74 @@ export default function DiscoverPage() {
             Desliza la carta o usa los botones
           </p>
         </>
+      )}
+      {/* ── Mutual Match Popup ──────────────────── */}
+      {matchPopup && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in"
+          style={{
+            background: 'rgba(5, 5, 8, 0.85)',
+            backdropFilter: 'blur(10px)',
+            WebkitBackdropFilter: 'blur(10px)',
+          }}
+        >
+          <div
+            className="w-full max-w-sm bg-[#0e0e16] border border-[rgba(255,255,255,0.08)] rounded-3xl p-6 text-center shadow-2xl animate-scale-up"
+            style={{
+              boxShadow: '0 20px 50px rgba(0,0,0,0.6)',
+            }}
+          >
+            <div className="flex justify-center mb-4">
+              <span className="text-5xl animate-bounce-slow">🎉</span>
+            </div>
+            
+            <span
+              className="inline-block text-[10px] font-bold tracking-widest px-3 py-1 mb-3"
+              style={{
+                background: 'rgba(74, 222, 128, 0.15)',
+                border: '0.5px solid rgba(74, 222, 128, 0.3)',
+                color: '#4ade80',
+                borderRadius: '99px',
+              }}
+            >
+              ¡NUEVO MATCH!
+            </span>
+
+            <h3 className="font-display text-[26px] leading-tight text-[#f0eee8] mb-2">
+              ¡Hiciste Match con {matchPopup.name}!
+            </h3>
+
+            <p className="text-[13px] text-[rgba(240,238,232,0.45)] mb-6 px-2 leading-relaxed">
+              Ambos tienen cromos repetidos que el otro necesita para completar su álbum. ¡Empiecen a hablar para coordinar el intercambio!
+            </p>
+
+            <div className="flex flex-col gap-2">
+              <Link
+                href="/matches"
+                className="w-full py-3 rounded-xl font-body font-semibold text-sm transition-all active:scale-[0.98] flex items-center justify-center"
+                style={{
+                  background: '#FAC71E',
+                  color: '#0a0a0f',
+                }}
+              >
+                Ver mis matches 💬
+              </Link>
+              
+              <button
+                onClick={() => setMatchPopup(null)}
+                className="w-full py-3 rounded-xl font-body text-xs text-[rgba(240,238,232,0.45)] hover:text-[rgba(240,238,232,0.8)] transition-all"
+                style={{ background: 'rgba(255,255,255,0.02)', border: '0.5px solid rgba(255,255,255,0.06)' }}
+              >
+                Seguir buscando
+              </button>
+            </div>
+
+            {/* Signature */}
+            <div className="mt-6 opacity-20 flex justify-center">
+              <span className="text-[9px] tracking-widest text-[#f0eee8] font-mono">pixelia - crisman</span>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

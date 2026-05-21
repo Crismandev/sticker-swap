@@ -1,9 +1,16 @@
 import { createClient } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
+import Link from 'next/link';
 
-export default async function ProfilePage({ params }: { params: { share_token: string } }) {
+type StickerItem = {
+  status: string;
+  quantity: number;
+  stickers: any;
+};
+
+export default async function PublicProfilePage({ params }: { params: Promise<{ share_token: string }> }) {
+  const { share_token: token } = await params;
   const supabase = await createClient();
-  const token = params.share_token;
 
   // Fetch the user by share_token
   const { data: user } = await supabase
@@ -23,72 +30,221 @@ export default async function ProfilePage({ params }: { params: { share_token: s
     .eq('user_id', user.id)
     .in('status', ['repeated', 'wanted']);
 
-  const repeated = stickersData?.filter(s => s.status === 'repeated') || [];
-  const wanted = stickersData?.filter(s => s.status === 'wanted') || [];
+  const repeated = (stickersData || []).filter(s => s.status === 'repeated');
+  const wanted = (stickersData || []).filter(s => s.status === 'wanted');
+
+  // Group repeated by section
+  const repeatedGrouped: Record<string, { flag: string; list: string[] }> = {};
+  repeated.forEach(r => {
+    const sticker = Array.isArray(r.stickers) ? r.stickers[0] : r.stickers;
+    if (!sticker) return;
+    const section = Array.isArray(sticker.sections) ? sticker.sections[0] : sticker.sections;
+    const sectionName = section?.name || 'Especial';
+    const flag = section?.flag_emoji || '🏆';
+    if (!repeatedGrouped[sectionName]) {
+      repeatedGrouped[sectionName] = { flag, list: [] };
+    }
+    const suffix = r.quantity > 1 ? ` (x${r.quantity})` : '';
+    repeatedGrouped[sectionName].list.push(`${sticker.code}${suffix}`);
+  });
+
+  // Group wanted by section
+  const wantedGrouped: Record<string, { flag: string; list: string[] }> = {};
+  wanted.forEach(w => {
+    const sticker = Array.isArray(w.stickers) ? w.stickers[0] : w.stickers;
+    if (!sticker) return;
+    const section = Array.isArray(sticker.sections) ? sticker.sections[0] : sticker.sections;
+    const sectionName = section?.name || 'Especial';
+    const flag = section?.flag_emoji || '🏆';
+    if (!wantedGrouped[sectionName]) {
+      wantedGrouped[sectionName] = { flag, list: [] };
+    }
+    wantedGrouped[sectionName].list.push(sticker.code);
+  });
+
+  const initials = user.display_name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() || 'U';
 
   return (
-    <main className="min-h-screen bg-gray-50 pb-20">
-      <header className="bg-[#8A1538] text-white p-8 shadow-md">
-        <div className="max-w-4xl mx-auto flex flex-col items-center">
-          <div className="w-24 h-24 bg-white/20 rounded-full flex items-center justify-center text-3xl font-bold mb-4">
-            {user.display_name.charAt(0).toUpperCase()}
+    <main className="min-h-screen bg-[#0a0a0f] text-[#f0eee8] pb-16 font-body">
+      {/* Premium Header */}
+      <header
+        className="relative overflow-hidden px-4 pt-12 pb-8 text-center border-b border-[rgba(255,255,255,0.06)]"
+        style={{
+          background: 'linear-gradient(180deg, #12121a 0%, #0a0a0f 100%)',
+        }}
+      >
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-80 h-80 bg-[#FAC71E]/5 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="relative z-10 flex flex-col items-center">
+          {/* Avatar circle */}
+          <div
+            className="w-20 h-20 rounded-full flex items-center justify-center font-display text-2xl font-bold border border-[rgba(255,255,255,0.12)] shadow-xl"
+            style={{
+              background: 'linear-gradient(135deg, #1b1b2f 0%, #0d0d17 100%)',
+              color: '#FAC71E',
+            }}
+          >
+            {initials}
           </div>
-          <h1 className="text-3xl font-bold tracking-tight">{user.display_name}</h1>
-          <p className="text-white/80 mt-2">
-            @{user.username} • {user.city || 'Desconocida'}, {user.country}
+
+          <h1 className="font-display text-[30px] leading-tight text-[#f0eee8] mt-4 uppercase">
+            {user.display_name}
+          </h1>
+          <p className="text-[12px] text-[rgba(240,238,232,0.4)] mt-1.5 flex items-center gap-1.5 justify-center">
+            <span>@{user.username}</span>
+            {user.city && (
+              <>
+                <span>•</span>
+                <span>📍 {user.city}, {user.country}</span>
+              </>
+            )}
           </p>
+
+          <span
+            className="inline-block text-[10px] tracking-widest font-bold px-3 py-1 mt-4"
+            style={{
+              background: 'rgba(250,199,30,0.08)',
+              border: '0.5px solid rgba(250,199,30,0.2)',
+              color: '#FAC71E',
+              borderRadius: '99px',
+            }}
+          >
+            CROMOS PARA INTERCAMBIAR
+          </span>
         </div>
       </header>
 
-      <div className="max-w-4xl mx-auto p-4 mt-8 grid md:grid-cols-2 gap-8">
+      {/* Lists container */}
+      <div className="max-w-4xl mx-auto p-4 grid md:grid-cols-2 gap-6 mt-6">
         {/* REPEATED */}
-        <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-          <h2 className="text-2xl font-bold mb-4 flex items-center gap-2 text-green-700">
-            <span>Repetidas</span>
-            <span className="text-sm bg-green-100 px-3 py-1 rounded-full">{repeated.length}</span>
-          </h2>
-          <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-            {repeated.map((s, idx) => {
-              const sticker = Array.isArray(s.stickers) ? s.stickers[0] : s.stickers;
-              if (!sticker) return null;
-              
-              return (
-                <div key={idx} className="bg-green-50 border border-green-200 p-2 rounded-xl flex flex-col items-center justify-center relative">
-                  <span className="font-mono font-bold text-sm">{sticker.code}</span>
-                  <div className="absolute -top-2 -right-2 bg-green-500 text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full shadow-sm">
-                    {s.quantity}
-                  </div>
+        <section
+          className="p-5 rounded-2xl border border-[rgba(255,255,255,0.06)] shadow-lg"
+          style={{ background: '#111119' }}
+        >
+          <div className="flex items-center justify-between mb-4 border-b border-[rgba(255,255,255,0.06)] pb-2.5">
+            <h2 className="font-display text-[18px] text-[#4ade80] tracking-wide">
+              REPETIDAS DISPONIBLES
+            </h2>
+            <span
+              className="text-[11px] font-bold px-2 py-0.5"
+              style={{
+                background: 'rgba(74, 222, 128, 0.1)',
+                border: '0.5px solid rgba(74, 222, 128, 0.3)',
+                color: '#4ade80',
+                borderRadius: '8px',
+              }}
+            >
+              {repeated.length}
+            </span>
+          </div>
+
+          <div className="flex flex-col gap-4">
+            {Object.entries(repeatedGrouped).map(([team, val]) => (
+              <div key={team}>
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <span className="text-base">{val.flag}</span>
+                  <span className="text-[11px] uppercase tracking-wider text-[rgba(240,238,232,0.45)] font-semibold">
+                    {team}
+                  </span>
                 </div>
-              );
-            })}
+                <div className="flex flex-wrap gap-1.5">
+                  {val.list.map(c => (
+                    <span
+                      key={c}
+                      className="font-mono text-[10px] font-bold px-2.5 py-1 rounded"
+                      style={{
+                        background: 'rgba(74,222,128,0.1)',
+                        border: '0.5px solid rgba(74,222,128,0.2)',
+                        color: '#4ade80',
+                      }}
+                    >
+                      {c}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ))}
             {repeated.length === 0 && (
-              <div className="col-span-full text-gray-400 text-center py-4">No tiene repetidas.</div>
+              <div className="text-center py-8 text-xs text-[rgba(240,238,232,0.3)]">
+                No tiene repetidas registradas.
+              </div>
             )}
           </div>
         </section>
 
         {/* WANTED */}
-        <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-          <h2 className="text-2xl font-bold mb-4 flex items-center gap-2 text-red-700">
-            <span>Faltantes</span>
-            <span className="text-sm bg-red-100 px-3 py-1 rounded-full">{wanted.length}</span>
-          </h2>
-          <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-            {wanted.map((s, idx) => {
-              const sticker = Array.isArray(s.stickers) ? s.stickers[0] : s.stickers;
-              if (!sticker) return null;
-              
-              return (
-                <div key={idx} className="bg-gray-50 border border-gray-200 p-2 rounded-xl flex flex-col items-center justify-center">
-                  <span className="font-mono font-bold text-sm text-gray-600">{sticker.code}</span>
+        <section
+          className="p-5 rounded-2xl border border-[rgba(255,255,255,0.06)] shadow-lg"
+          style={{ background: '#111119' }}
+        >
+          <div className="flex items-center justify-between mb-4 border-b border-[rgba(255,255,255,0.06)] pb-2.5">
+            <h2 className="font-display text-[18px] text-[#fb7185] tracking-wide">
+              LE FALTAN (LISTA DE DESEOS)
+            </h2>
+            <span
+              className="text-[11px] font-bold px-2 py-0.5"
+              style={{
+                background: 'rgba(251, 113, 133, 0.1)',
+                border: '0.5px solid rgba(251, 113, 133, 0.3)',
+                color: '#fb7185',
+                borderRadius: '8px',
+              }}
+            >
+              {wanted.length}
+            </span>
+          </div>
+
+          <div className="flex flex-col gap-4">
+            {Object.entries(wantedGrouped).map(([team, val]) => (
+              <div key={team}>
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <span className="text-base">{val.flag}</span>
+                  <span className="text-[11px] uppercase tracking-wider text-[rgba(240,238,232,0.45)] font-semibold">
+                    {team}
+                  </span>
                 </div>
-              );
-            })}
+                <div className="flex flex-wrap gap-1.5">
+                  {val.list.map(c => (
+                    <span
+                      key={c}
+                      className="font-mono text-[10px] font-bold px-2.5 py-1 rounded"
+                      style={{
+                        background: 'rgba(251,113,133,0.1)',
+                        border: '0.5px solid rgba(251,113,133,0.2)',
+                        color: '#fb7185',
+                      }}
+                    >
+                      {c}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ))}
             {wanted.length === 0 && (
-              <div className="col-span-full text-gray-400 text-center py-4">¡Álbum completo o sin registrar!</div>
+              <div className="text-center py-8 text-xs text-[rgba(240,238,232,0.3)]">
+                No tiene cromos pendientes en su lista.
+              </div>
             )}
           </div>
         </section>
+      </div>
+
+      {/* CTA Button */}
+      <div className="flex flex-col items-center justify-center mt-10 gap-3 px-4 text-center">
+        <p className="text-xs text-[rgba(240,238,232,0.35)]">
+          ¿Tú también estás coleccionando cromos de la Copa Mundial 2026?
+        </p>
+        <Link
+          href="/"
+          className="px-6 py-3 bg-[#FAC71E] text-[#0a0a0f] font-semibold rounded-xl text-sm transition-all active:scale-[0.98] shadow-lg shadow-[#FAC71E]/10"
+        >
+          ¡Únete a Sticker-Swap y comienza a cambiar!
+        </Link>
+      </div>
+
+      {/* Signature */}
+      <div className="flex justify-center items-center py-12 opacity-35">
+        <span className="text-[10px] tracking-widest text-[#f0eee8] font-mono">pixelia - crisman</span>
       </div>
     </main>
   );

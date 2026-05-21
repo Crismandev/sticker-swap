@@ -1,30 +1,26 @@
 'use client';
 
-import { useState, useCallback } from 'react';
-
 export type StickerStatus = 'wanted' | 'owned' | 'repeated';
 
 type Sticker = {
   id: string;
   code: string;
+  name: string;
   is_foil: boolean;
   status?: StickerStatus;
+  quantity?: number;
 };
 
 const STATUS_CYCLE: StickerStatus[] = ['wanted', 'owned', 'repeated'];
 
-const TOAST_MESSAGES: Record<StickerStatus, { text: string; color: string }> = {
-  owned:    { text: 'Marcada como pegada ✓',    color: '#4ade80' },
-  repeated: { text: 'Marcada como repetida ↻',  color: '#FAC71E' },
-  wanted:   { text: 'Marcada como faltante ✗',  color: '#fb7185' },
-};
-
 function StickerCard({
   sticker,
   onStatusChange,
+  onOpenQuantityModal,
 }: {
   sticker: Sticker;
-  onStatusChange: (id: string, status: StickerStatus) => void;
+  onStatusChange: (id: string, status: StickerStatus, quantity?: number) => void;
+  onOpenQuantityModal: (id: string, name: string, status: StickerStatus, quantity: number) => void;
 }) {
   const status = sticker.status ?? 'wanted';
   const isOwned    = status === 'owned';
@@ -55,10 +51,14 @@ function StickerCard({
     <button
       id={`sticker-${sticker.id}`}
       onClick={() => {
-        const nextIdx = (STATUS_CYCLE.indexOf(status) + 1) % STATUS_CYCLE.length;
-        onStatusChange(sticker.id, STATUS_CYCLE[nextIdx]);
+        if (status === 'repeated') {
+          onOpenQuantityModal(sticker.id, sticker.name, status, sticker.quantity || 1);
+        } else {
+          const nextIdx = (STATUS_CYCLE.indexOf(status) + 1) % STATUS_CYCLE.length;
+          onStatusChange(sticker.id, STATUS_CYCLE[nextIdx], 1);
+        }
       }}
-      className="relative flex flex-col items-center justify-center gap-1 card-hover-transition active:scale-95"
+      className="relative flex flex-col items-center justify-center gap-1 card-hover-transition active:scale-95 text-center px-1"
       style={{
         aspectRatio: '3 / 4',
         borderRadius: '10px',
@@ -87,14 +87,16 @@ function StickerCard({
       {/* Repeated ×N label */}
       {isRepeated && (
         <span
-          className="absolute bottom-1 right-1 text-[8px] font-bold"
+          className="absolute bottom-1 right-1 text-[8px] font-bold animate-pulse-light"
           style={{
             color: '#FAC71E',
             background: 'rgba(250,199,30,0.15)',
             padding: '1px 4px',
             borderRadius: '4px',
           }}
-        >×1</span>
+        >
+          ×{sticker.quantity || 1}
+        </span>
       )}
 
       {/* Icon */}
@@ -114,9 +116,11 @@ function StickerCard({
 export default function StickerGrid({
   stickers,
   onStatusChange,
+  onOpenQuantityModal,
 }: {
   stickers: Sticker[];
-  onStatusChange: (id: string, status: StickerStatus) => void;
+  onStatusChange: (id: string, status: StickerStatus, quantity?: number) => void;
+  onOpenQuantityModal: (id: string, name: string, status: StickerStatus, quantity: number) => void;
 }) {
   return (
     <div
@@ -124,7 +128,12 @@ export default function StickerGrid({
       style={{ gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px' }}
     >
       {stickers.map(s => (
-        <StickerCard key={s.id} sticker={s} onStatusChange={onStatusChange} />
+        <StickerCard
+          key={s.id}
+          sticker={s}
+          onStatusChange={onStatusChange}
+          onOpenQuantityModal={onOpenQuantityModal}
+        />
       ))}
     </div>
   );
