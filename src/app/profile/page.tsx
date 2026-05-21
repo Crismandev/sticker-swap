@@ -7,6 +7,7 @@ import CodeChip from '@/components/ui/CodeChip';
 import ProgressBar from '@/components/album/ProgressBar';
 import StatsRow from '@/components/album/StatsRow';
 import Link from 'next/link';
+import { ProfileSkeleton, FullScreenLoader } from '@/components/ui/Skeletons';
 
 type TeamGroup = {
   team: string;
@@ -214,23 +215,11 @@ export default function ProfilePage() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0a0a0f]">
-        <div className="animate-pulse-dot w-2 h-2 rounded-full" style={{ background: '#FAC71E' }} />
-      </div>
-    );
+    return <ProfileSkeleton />;
   }
 
   if (!userId) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-[#0a0a0f] p-4 text-center">
-        <span className="text-4xl">🔐</span>
-        <p className="font-display text-[22px] text-[#f0eee8]">INICIA SESIÓN PARA VER TU PERFIL</p>
-        <Link href="/login" className="px-6 py-3 bg-[#FAC71E] text-[#0a0a0f] font-semibold rounded-xl text-sm transition-all active:scale-[0.98]">
-          Iniciar sesión
-        </Link>
-      </div>
-    );
+    return <FullScreenLoader />;
   }
 
   const initials = displayName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || 'U';

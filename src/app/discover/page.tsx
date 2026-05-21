@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import CardStack, { type CardStackHandle } from '@/components/discover/CardStack';
 import ActionButtons from '@/components/discover/ActionButtons';
 import { type MatchProfile } from '@/components/discover/MatchCard';
+import { DiscoverSkeleton } from '@/components/ui/Skeletons';
 
 const ALBUM_ID = 'a0000000-0000-0000-0000-000000000001';
 
@@ -186,57 +187,53 @@ export default function DiscoverPage() {
   return (
     <div className="relative min-h-screen pb-4 nav-pad">
       {/* ── Header ──────────────────────────────── */}
-      <div className="flex items-center justify-between px-4 pt-6 pb-3">
-        <div>
-          <span className="block text-[10px] uppercase tracking-[0.18em]" style={{ color: '#FAC71E' }}>
+      {loadState !== 'loading' && (
+      <div className="flex items-center justify-between px-5 pt-8 pb-4">
+        <div className="flex flex-col gap-1.5">
+          <span className="block text-[10px] font-bold uppercase tracking-[0.25em] font-body" style={{ color: '#FFCB2F' }}>
             INTERCAMBIO
           </span>
-          <span className="font-display text-[28px] leading-none" style={{ color: '#f0eee8' }}>
+          <span className="font-display text-[32px] font-bold leading-none tracking-tight" style={{ color: '#f0eee8' }}>
             ENCONTRAR MATCH
           </span>
         </div>
 
         <div
-          className="flex flex-col items-center px-3 py-2"
+          className="flex flex-col items-center px-3 py-2 animate-glow-pulse"
           style={{
-            background: 'rgba(250,199,30,0.08)',
-            border: '0.5px solid rgba(250,199,30,0.2)',
-            borderRadius: 12,
+            background: 'rgba(255,203,47,0.09)',
+            border: '1px solid rgba(255,203,47,0.25)',
+            borderRadius: 16,
+            minWidth: 62,
           }}
         >
-          <span className="font-display text-[26px] leading-none" style={{ color: '#FAC71E' }}>
+          <span className="font-display text-[28px] leading-none" style={{ color: '#FFCB2F' }}>
             {matchCount}
           </span>
-          <span className="text-[9px] uppercase tracking-wider" style={{ color: 'rgba(250,199,30,0.5)' }}>
+          <span className="text-[9px] uppercase tracking-wider font-body" style={{ color: 'rgba(255,203,47,0.55)' }}>
             matches
           </span>
         </div>
       </div>
+      )}
 
       {/* ── Status banner ───────────────────────── */}
-      {loadState === 'no-auth' && (
+      {loadState !== 'loading' && loadState === 'no-auth' && (
         <div
-          className="mx-4 mb-3 flex items-center gap-2 px-3 py-2 text-[11px]"
+          className="mx-5 mb-4 flex items-center gap-2 px-4 py-2.5 text-[12px] font-body"
           style={{
-            background: 'rgba(250,199,30,0.07)',
-            border: '0.5px solid rgba(250,199,30,0.2)',
-            borderRadius: 10,
-            color: 'rgba(250,199,30,0.8)',
+            background: 'rgba(255,203,47,0.07)',
+            border: '1px solid rgba(255,203,47,0.20)',
+            borderRadius: 12,
+            color: 'rgba(255,203,47,0.85)',
           }}
         >
           <span>⚡</span>
-          <span>Modo demo — <a href="/login" style={{ textDecoration: 'underline' }}>inicia sesión</a> para ver matches reales</span>
+          <span>Modo demo &mdash; <a href="/login" style={{ textDecoration: 'underline', fontWeight: 600 }}>inicia sesión</a> para ver matches reales</span>
         </div>
       )}
 
-      {loadState === 'loading' && (
-        <div className="flex justify-center py-8">
-          <div
-            className="animate-pulse-dot w-2 h-2 rounded-full"
-            style={{ background: '#FAC71E' }}
-          />
-        </div>
-      )}
+      {loadState === 'loading' && <DiscoverSkeleton />}
 
       {/* ── Card Stack ──────────────────────────── */}
       {(loadState === 'loaded' || loadState === 'no-auth' || loadState === 'error') && (

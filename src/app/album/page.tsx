@@ -9,6 +9,7 @@ import StatsRow from '@/components/album/StatsRow';
 import StickerGrid, { type StickerStatus } from '@/components/album/StickerGrid';
 import FilterPills from '@/components/album/FilterPills';
 import QuantityModal from '@/components/album/QuantityModal';
+import { AlbumMenuSkeleton } from '@/components/ui/Skeletons';
 
 // ============================================================
 // ALL 49 SECTIONS — matches the seed_wc2026.sql data exactly
@@ -152,6 +153,7 @@ export default function AlbumPage() {
   const [statusMap, setStatusMap]   = useState<Record<string, { status: StickerStatus; quantity: number }>>({});
   const [toast, setToast]           = useState<Toast>(null);
   const [userId, setUserId]         = useState<string | null>(null);
+  const [fetching, setFetching]     = useState(true);
 
   // ── Quantity Modal State ───────────────────────────────
   const [modalOpen, setModalOpen] = useState(false);
@@ -164,7 +166,7 @@ export default function AlbumPage() {
     const supabase = createClient();
 
     supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) return;
+      if (!user) { setFetching(false); return; }
       setUserId(user.id);
 
       // Load all user_stickers joined with sticker codes
@@ -173,7 +175,7 @@ export default function AlbumPage() {
         .select('status, quantity, stickers(code)')
         .eq('user_id', user.id)
         .then(({ data }) => {
-          if (!data) return;
+          if (!data) { setFetching(false); return; }
           const map: Record<string, { status: StickerStatus; quantity: number }> = {};
           data.forEach((row: any) => {
             const code = Array.isArray(row.stickers)
@@ -182,6 +184,7 @@ export default function AlbumPage() {
             if (code) map[code] = { status: row.status as StickerStatus, quantity: row.quantity || 1 };
           });
           setStatusMap(map);
+          setFetching(false);
         });
     });
   }, []);
@@ -334,9 +337,11 @@ export default function AlbumPage() {
   // ============================================================
   // MENU VIEW
   // ============================================================
+  if (fetching) return <AlbumMenuSkeleton />;
+
   if (view === 'menu') {
     return (
-      <div className="relative min-h-screen pb-4">
+      <div className="relative min-h-screen pb-4 animate-slide-up">
         {/* Header */}
         <div className="flex items-center justify-between px-5 pt-8 pb-5">
           <div className="flex flex-col gap-1.5">
