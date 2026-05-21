@@ -1,42 +1,44 @@
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap');
 @import "tailwindcss";
 
 /* ============================================================
-   DESIGN TOKENS
+   DESIGN TOKENS — FIFA World Cup 2026
    ============================================================ */
 :root {
-  /* Backgrounds */
-  --bg-base:    #090910;
-  --bg-card:    #111119;
+  /* Backgrounds — índigo nocturno cálido */
+  --bg-base:    #08080e;
+  --bg-card:    #0f0f1c;
   --bg-surface: rgba(255,255,255,0.04);
+  --bg-glass:   rgba(15,15,28,0.7);
 
   /* Borders */
-  --border:       rgba(255,255,255,0.08);
-  --border-hover: rgba(255,255,255,0.15);
+  --border:       rgba(255,255,255,0.09);
+  --border-hover: rgba(255,255,255,0.18);
 
-  /* Gold — primary accent */
-  --gold:        #FAC71E;
-  --gold-dim:    rgba(250,199,30,0.12);
-  --gold-border: rgba(250,199,30,0.28);
+  /* Gold — Oro FIFA premium más cálido */
+  --gold:        #FFCB2F;
+  --gold-dim:    rgba(255,203,47,0.12);
+  --gold-border: rgba(255,203,47,0.30);
+  --gold-glow:   rgba(255,203,47,0.22);
 
-  /* Sticker status */
-  --owned:       #4ade80;
-  --owned-dim:   rgba(74,222,128,0.08);
-  --repeated:    #FAC71E;
-  --reject:      #fb7185;
-  --reject-dim:  rgba(251,113,133,0.08);
-  --foil:        rgba(192,160,255,0.7);
+  /* Status — más saturados y vibrantes */
+  --owned:       #2ED573;
+  --owned-dim:   rgba(46,213,115,0.09);
+  --repeated:    #FFCB2F;
+  --reject:      #FF4757;
+  --reject-dim:  rgba(255,71,87,0.09);
+  --foil:        #C8A4FF;
 
   /* Text */
   --text-primary:   #f0eee8;
-  --text-secondary: rgba(240,238,232,0.5);
-  --text-hint:      rgba(240,238,232,0.28);
+  --text-secondary: rgba(240,238,232,0.55);
+  --text-hint:      rgba(240,238,232,0.30);
 
   /* Radii */
-  --r-card:   20px;
+  --r-card:   22px;
   --r-chip:   10px;
   --r-pill:   99px;
-  --r-btn:    12px;
+  --r-btn:    14px;
 }
 
 /* ============================================================
@@ -55,19 +57,36 @@ body {
   overflow-x: hidden;
 }
 
+/* Stadium glow — luz cálida desde abajo + azul profundo desde arriba */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 90% 55% at 50% 105%, rgba(255,203,47,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 100% 70% at 50% -5%, rgba(60,40,140,0.18) 0%, transparent 65%);
+  pointer-events: none;
+  z-index: 0;
+}
+
 /* ============================================================
    TYPOGRAPHY HELPERS
    ============================================================ */
-.font-display { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.04em; }
+.font-display {
+  font-family: 'Barlow Condensed', 'Impact', sans-serif;
+  letter-spacing: 0.02em;
+  font-weight: 700;
+}
+.font-body { font-family: 'DM Sans', system-ui, sans-serif; }
 
 /* ============================================================
    GRID BACKGROUND
    ============================================================ */
 .grid-bg {
   background-image:
-    linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px);
-  background-size: 32px 32px;
+    linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+  background-size: 36px 36px;
 }
 
 /* ============================================================
@@ -80,16 +99,20 @@ body {
    ANIMATIONS
    ============================================================ */
 @keyframes pulse-dot {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.3; }
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.4; transform: scale(0.8); }
 }
 @keyframes toast-in {
-  from { opacity: 0; transform: translateX(-50%) translateY(10px); }
-  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+  from { opacity: 0; transform: translateX(-50%) translateY(14px) scale(0.94); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
 }
 @keyframes modal-in {
-  from { opacity: 0; transform: scale(0.93); }
-  to   { opacity: 1; transform: scale(1); }
+  from { opacity: 0; transform: scale(0.90) translateY(16px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(22px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 @keyframes card-fly-right {
   to { transform: translateX(150%) rotate(20deg); opacity: 0; }
@@ -101,27 +124,121 @@ body {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-6px); }
+}
+@keyframes bounce-in {
+  0%   { transform: scale(0); opacity: 0; }
+  55%  { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 10px var(--gold-glow), 0 0 20px transparent; }
+  50%       { box-shadow: 0 0 20px var(--gold-glow), 0 0 40px rgba(255,203,47,0.12); }
+}
+@keyframes shimmer {
+  0%   { background-position: -600px 0; }
+  100% { background-position: 600px 0; }
+}
+@keyframes shimmer-border {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+@keyframes confetti-fall {
+  0%   { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+@keyframes nav-pip-in {
+  from { transform: scale(0); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+@keyframes foil-shift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
 
-.animate-pulse-dot    { animation: pulse-dot 1.8s ease infinite; }
-.animate-toast-in     { animation: toast-in 0.22s ease forwards; }
-.animate-modal-in     { animation: modal-in 0.35s cubic-bezier(.34,1.56,.64,1) forwards; }
-.animate-fade-in      { animation: fade-in 0.25s ease forwards; }
+.animate-pulse-dot      { animation: pulse-dot 1.6s ease infinite; }
+.animate-toast-in       { animation: toast-in 0.26s cubic-bezier(.34,1.56,.64,1) forwards; }
+.animate-modal-in       { animation: modal-in 0.38s cubic-bezier(.34,1.56,.64,1) forwards; }
+.animate-slide-up       { animation: slide-up 0.32s cubic-bezier(.34,1.56,.64,1) forwards; }
+.animate-fade-in        { animation: fade-in 0.28s ease forwards; }
+.animate-float          { animation: float 3.2s ease-in-out infinite; }
+.animate-bounce-in      { animation: bounce-in 0.45s cubic-bezier(.34,1.56,.64,1) forwards; }
+.animate-glow-pulse     { animation: glow-pulse 2.4s ease-in-out infinite; }
+.animate-foil           { animation: foil-shift 4s ease infinite; }
+
+/* ============================================================
+   SKELETON LOADER
+   ============================================================ */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0.04) 0%,
+    rgba(255,255,255,0.10) 50%,
+    rgba(255,255,255,0.04) 100%
+  );
+  background-size: 600px 100%;
+  animation: shimmer 1.6s ease infinite;
+  border-radius: var(--r-chip);
+}
 
 /* ============================================================
    TRANSITIONS
    ============================================================ */
-.transition-card  { transition: transform 0.35s cubic-bezier(.34,1.56,.64,1), opacity 0.25s ease; }
-.transition-state { transition: all 0.15s ease; }
+.transition-card  { transition: transform 0.38s cubic-bezier(.34,1.56,.64,1), opacity 0.26s ease; }
+.transition-state { transition: all 0.18s ease; }
+.card-hover-transition {
+  transition: transform 0.22s cubic-bezier(.34,1.56,.64,1),
+              opacity 0.18s ease,
+              box-shadow 0.22s ease;
+}
+.card-hover-transition:active { transform: scale(0.95); }
 
 /* ============================================================
    STICKER STATES
    ============================================================ */
-.sticker-wanted  { background: rgba(255,255,255,0.025); border-color: rgba(255,255,255,0.06); }
-.sticker-owned   { background: rgba(74,222,128,0.07);   border-color: rgba(74,222,128,0.38); }
-.sticker-repeated{ background: rgba(250,199,30,0.07);   border-color: rgba(250,199,30,0.42); }
-.sticker-foil    { border-color: rgba(192,160,255,0.5); }
+.sticker-wanted   { background: rgba(255,255,255,0.025); border-color: rgba(255,255,255,0.07); }
+.sticker-owned    { background: rgba(46,213,115,0.07);   border-color: rgba(46,213,115,0.38); }
+.sticker-repeated { background: rgba(255,203,47,0.07);   border-color: rgba(255,203,47,0.42); }
+.sticker-foil {
+  background: linear-gradient(135deg, rgba(200,164,255,0.12), rgba(100,160,255,0.08), rgba(200,164,255,0.12));
+  background-size: 200% 200%;
+  border-color: rgba(200,164,255,0.55);
+  animation: foil-shift 5s ease infinite;
+}
+
+/* ============================================================
+   GLASSMORPHISM
+   ============================================================ */
+.glass {
+  background: rgba(15,15,28,0.65);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.09);
+}
+
+/* ============================================================
+   SHIMMER BORDER (for CTA buttons)
+   ============================================================ */
+.shimmer-border {
+  position: relative;
+  overflow: hidden;
+}
+.shimmer-border::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  background: conic-gradient(from 0deg, transparent 60%, rgba(255,203,47,0.6) 80%, transparent 100%);
+  border-radius: inherit;
+  animation: shimmer-border 3s linear infinite;
+  z-index: -1;
+}
 
 /* ============================================================
    SAFE-AREA PADDING FOR NAV
    ============================================================ */
-.nav-pad { padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px)); }
+.nav-pad { padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)); }
+
+
