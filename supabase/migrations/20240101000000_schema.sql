@@ -196,6 +196,7 @@ ALTER TABLE swap_messages ENABLE ROW LEVEL SECURITY;
 -- Usuarios: cada quien lee su propio perfil; todos leen perfiles públicos
 CREATE POLICY "users_read_own"   ON users FOR SELECT USING (true); -- perfiles son públicos
 CREATE POLICY "users_update_own" ON users FOR UPDATE USING (auth.uid() = id);
+CREATE POLICY "users_insert_own" ON users FOR INSERT WITH CHECK (auth.uid() = id);
 
 -- Stickers del usuario: solo el dueño puede ver/editar los suyos
 CREATE POLICY "user_stickers_own" ON user_stickers

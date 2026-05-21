@@ -10,7 +10,7 @@ export type CardStackHandle = {
 };
 
 const STACK_TRANSFORMS = [
-  { scale: 1,    y: 0,  opacity: 1,    z: 3 },
+  { scale: 1, y: 0, opacity: 1, z: 3 },
   { scale: 0.95, y: 14, opacity: 0.55, z: 2 },
   { scale: 0.90, y: 28, opacity: 0.28, z: 1 },
 ];
@@ -20,17 +20,17 @@ const CardStack = forwardRef<CardStackHandle, {
   onAccept: (profile: MatchProfile) => void;
   onReject: (profile: MatchProfile) => void;
 }>(function CardStack({ profiles, onAccept, onReject }, ref) {
-  const [dismissed, setDismissed]     = useState<string[]>([]);
-  const [matchedProfile, setMatched]  = useState<MatchProfile | null>(null);
-  const [swipeDir, setSwipeDir]       = useState<'left' | 'right' | null>(null);
-  const [dragX, setDragX]             = useState(0);
+  const [dismissed, setDismissed] = useState<string[]>([]);
+  const [matchedProfile, setMatched] = useState<MatchProfile | null>(null);
+  const [swipeDir, setSwipeDir] = useState<'left' | 'right' | null>(null);
+  const [dragX, setDragX] = useState(0);
 
-  const dragStartX  = useRef(0);
-  const isDragging  = useRef(false);
-  const isSwiping   = useRef(false);
+  const dragStartX = useRef(0);
+  const isDragging = useRef(false);
+  const isSwiping = useRef(false);
 
   const remaining = profiles.filter(p => !dismissed.includes(p.userId));
-  const top       = remaining[0];
+  const top = remaining[0];
 
   const dismiss = useCallback((dir: 'left' | 'right') => {
     if (!top || isSwiping.current) return;
@@ -54,7 +54,7 @@ const CardStack = forwardRef<CardStackHandle, {
 
   // Expose swipe methods to parent (for action buttons)
   useImperativeHandle(ref, () => ({
-    swipeLeft:  () => dismiss('left'),
+    swipeLeft: () => dismiss('left'),
     swipeRight: () => dismiss('right'),
   }), [dismiss]);
 
@@ -123,16 +123,16 @@ const CardStack = forwardRef<CardStackHandle, {
   }
 
   /* ── Visual drag state ── */
-  const activeRotation  = isSwiping.current ? 0 : (dragX / 380) * 14;
-  const tintAccept = !isSwiping.current && dragX > 50  ? Math.min((dragX - 50) / 90, 1) : 0;
+  const activeRotation = isSwiping.current ? 0 : (dragX / 380) * 14;
+  const tintAccept = !isSwiping.current && dragX > 50 ? Math.min((dragX - 50) / 90, 1) : 0;
   const tintReject = !isSwiping.current && dragX < -50 ? Math.min((-dragX - 50) / 90, 1) : 0;
 
   const topStyle: React.CSSProperties = {
     transform: swipeDir === 'right'
       ? 'translateX(150%) rotate(20deg)'
       : swipeDir === 'left'
-      ? 'translateX(-150%) rotate(-20deg)'
-      : `translateX(${dragX}px) rotate(${activeRotation}deg)`,
+        ? 'translateX(-150%) rotate(-20deg)'
+        : `translateX(${dragX}px) rotate(${activeRotation}deg)`,
     opacity: swipeDir ? 0 : 1,
     transition: swipeDir ? 'transform 0.34s ease, opacity 0.2s ease' : 'none',
     zIndex: 3,

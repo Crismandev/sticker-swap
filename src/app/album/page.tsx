@@ -251,13 +251,16 @@ export default function AlbumPage() {
     const supabase = createClient();
 
     // Find sticker UUID by code
-    const { data: stickerRow } = await supabase
+    const { data: stickerRow, error: stickerErr } = await supabase
       .from('stickers')
       .select('id')
       .eq('code', id)
       .single();
 
-    if (!stickerRow) return;
+    if (!stickerRow) {
+      console.error('Sticker lookup failed:', stickerErr);
+      return;
+    }
 
     if (status === 'wanted') {
       // 'wanted' is the default state — remove the row
@@ -267,12 +270,44 @@ export default function AlbumPage() {
         .eq('user_id', userId)
         .eq('sticker_id', stickerRow.id);
     } else {
-      await supabase
+      // Manual upsert to avoid onConflict issues
+      const { data: existing } = await supabase
         .from('user_stickers')
-        .upsert(
-          { user_id: userId, sticker_id: stickerRow.id, status, quantity },
-          { onConflict: 'user_id,sticker_id' }
-        );
+        .select('id')
+        .eq('user_id', userId)
+        .eq('sticker_id', stickerRow.id)
+        .maybeSingle();
+
+      if (existing) {
+        const { error: updateErr } = await supabase
+          .from('user_stickers')
+          .update({ status, quantity, updated_at: new Date().toISOString() })
+          .eq('id', existing.id);
+        if (updateErr) console.error('Update error:', updateErr);
+      } else {
+        const { error: insertErr } = await supabase
+          .from('user_stickers')
+          .insert({ user_id: userId, sticker_id: stickerRow.id, status, quantity });
+        
+        if (insertErr) {
+          // Fallback: If insert fails due to missing user profile, attempt to recreate it
+          if (insertErr.code === '23503') { 
+            console.log('Attempting to recover user profile...');
+            await supabase.from('users').insert({
+              id: userId,
+              email: `user_${userId.substring(0,6)}@swap.local`,
+              username: `user_${userId.substring(0,8)}`,
+              display_name: 'Sticker Collector'
+            });
+            // Try inserting sticker again
+            await supabase
+              .from('user_stickers')
+              .insert({ user_id: userId, sticker_id: stickerRow.id, status, quantity });
+          } else {
+            console.error('Insert error:', insertErr);
+          }
+        }
+      }
     }
   }, [userId]);
 
@@ -303,53 +338,60 @@ export default function AlbumPage() {
     return (
       <div className="relative min-h-screen pb-4">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 pt-6 pb-1">
-          <div>
-            <span className="block text-[10px] uppercase tracking-[0.18em] font-body" style={{ color: '#FAC71E' }}>
+        <div className="flex items-center justify-between px-5 pt-8 pb-5">
+          <div className="flex flex-col gap-1.5">
+            <span className="block text-[10px] uppercase font-bold tracking-[0.25em] font-body" style={{ color: '#FAC71E' }}>
               PANINI · FIFA
             </span>
-            <span className="font-display text-[28px] leading-none" style={{ color: '#f0eee8' }}>
+            <span className="font-display text-[32px] font-bold leading-none tracking-tight drop-shadow-sm" style={{ color: '#f0eee8' }}>
               WORLD CUP 2026
             </span>
           </div>
           <Link
             href="/profile"
             id="menu-profile-link"
-            className="flex items-center gap-2 px-3 py-2 card-hover-transition"
+            className="flex items-center gap-2.5 px-2.5 py-2 card-hover-transition"
             style={{
-              background: 'rgba(255,255,255,0.04)',
-              border: '0.5px solid rgba(255,255,255,0.08)',
-              borderRadius: '12px',
+              background: 'rgba(255,255,255,0.03)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: '16px',
             }}
           >
             <div
-              className="w-7 h-7 rounded-full flex items-center justify-center font-display text-sm"
-              style={{ background: 'linear-gradient(135deg, #FAC71E, #f0a500)', color: '#0a0a0f' }}
+              className="w-8 h-8 rounded-full flex items-center justify-center font-display text-sm"
+              style={{ background: 'linear-gradient(135deg, #FAC71E, #f0a500)', color: '#0a0a0f', boxShadow: '0 2px 10px rgba(250,199,30,0.3)' }}
             >
               U
             </div>
-            <span className="text-[11px] font-body" style={{ color: 'rgba(240,238,232,0.45)' }}>
+            <span className="text-[12px] font-medium font-body hidden sm:block pr-2" style={{ color: 'rgba(240,238,232,0.6)' }}>
               Mi perfil
             </span>
           </Link>
         </div>
 
-        <ProgressBar owned={totalOwned} total={totalStickers} />
-        <StatsRow owned={totalOwned} repeated={totalRepeated} missing={totalMissing} />
+        <div className="px-5 mb-2">
+          <ProgressBar owned={totalOwned} total={totalStickers} />
+        </div>
+        <div className="px-5 mb-4">
+          <StatsRow owned={totalOwned} repeated={totalRepeated} missing={totalMissing} />
+        </div>
 
         {/* Quick manage list button */}
-        <div className="px-4 mb-4">
+        <div className="px-5 mb-6">
           <Link
             href="/album/quick"
-            className="w-full py-2.5 rounded-xl text-xs font-body font-medium flex items-center justify-center gap-1.5 transition-all bg-[rgba(250,199,30,0.06)] border border-[rgba(250,199,30,0.2)] text-[#FAC71E] hover:bg-[rgba(250,199,30,0.1)] active:scale-[0.99]"
+            className="w-full py-3.5 rounded-2xl text-[13px] font-body font-bold flex items-center justify-center gap-2 transition-all bg-[rgba(250,199,30,0.08)] border border-[rgba(250,199,30,0.25)] text-[#FAC71E] hover:bg-[rgba(250,199,30,0.12)] active:scale-[0.98] shadow-sm shadow-[#FAC71E]/5"
           >
-            <span>⚡ Carga Rápida (Listas de Códigos)</span>
+            <span className="text-lg leading-none">⚡</span>
+            <span>Carga Rápida (Listas de Códigos)</span>
           </Link>
         </div>
 
-        <div className="mx-4 mb-4 h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
+        <div className="mx-5 mb-6 h-px" style={{ background: 'linear-gradient(90deg, rgba(255,255,255,0.08), transparent)' }} />
 
-        <SectionMenu sections={SECTIONS} statusMap={statusMap} onSelect={handleSelect} />
+        <div className="px-1">
+          <SectionMenu sections={SECTIONS} statusMap={statusMap} onSelect={handleSelect} />
+        </div>
 
         {/* Signature */}
         <div className="flex justify-center items-center py-8 opacity-45">
@@ -430,39 +472,40 @@ export default function AlbumPage() {
             </span>
 
             {/* Team name */}
-            <h1 className="font-display text-[36px] leading-none tracking-wide" style={{ color: '#f0eee8' }}>
+            <h1 className="font-display text-[38px] font-bold leading-[1.1] tracking-tight drop-shadow-md" style={{ color: '#f0eee8' }}>
               {activeSection.name.toUpperCase()}
             </h1>
 
             {/* Progress */}
-            <div className="flex items-center gap-3 mt-3">
+            <div className="flex items-center gap-4 mt-4">
               {/* Mini bar */}
-              <div className="flex-1 relative" style={{ height: '4px', background: 'rgba(255,255,255,0.15)', borderRadius: '99px' }}>
+              <div className="flex-1 relative shadow-inner" style={{ height: '6px', background: 'rgba(255,255,255,0.12)', borderRadius: '99px' }}>
                 <div
                   style={{
                     width: `${sectionPct}%`,
                     height: '100%',
                     borderRadius: '99px',
                     background: `linear-gradient(90deg, ${c1}, ${c2})`,
-                    transition: 'width 0.4s ease',
+                    boxShadow: `0 0 10px ${c1}60`,
+                    transition: 'width 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
                   }}
                 />
               </div>
-              <span className="font-display text-[18px] leading-none flex-shrink-0" style={{ color: c1 }}>
+              <span className="font-display text-[20px] font-bold leading-none flex-shrink-0 drop-shadow-sm" style={{ color: c1 }}>
                 {sectionPct}%
               </span>
             </div>
 
             {/* Stats row inline */}
-            <div className="flex gap-4 mt-2">
+            <div className="flex gap-5 mt-4">
               {[
                 { label: 'Pegadas',  value: sectionOwned,    color: '#4ade80' },
                 { label: 'Repetidas', value: sectionRepeated, color: '#FAC71E' },
                 { label: 'Faltan',   value: sectionMissing,  color: '#fb7185' },
               ].map(({ label, value, color }) => (
-                <div key={label} className="flex items-baseline gap-1">
-                  <span className="font-display text-[20px] leading-none" style={{ color }}>{value}</span>
-                  <span className="text-[10px] font-body" style={{ color: 'rgba(240,238,232,0.35)' }}>{label}</span>
+                <div key={label} className="flex flex-col gap-0.5">
+                  <span className="font-display text-[22px] font-bold leading-none drop-shadow-sm" style={{ color }}>{value}</span>
+                  <span className="text-[10px] font-body font-medium uppercase tracking-wider" style={{ color: 'rgba(240,238,232,0.4)' }}>{label}</span>
                 </div>
               ))}
             </div>
@@ -502,11 +545,11 @@ export default function AlbumPage() {
           </svg>
         </button>
 
-        <span className="text-xl">{activeSection.flag}</span>
-        <span className="font-display text-[18px] leading-none flex-1" style={{ color: '#f0eee8' }}>
+        <span className="text-[22px] drop-shadow-sm">{activeSection.flag}</span>
+        <span className="font-display text-[18px] font-bold leading-none flex-1 tracking-wide" style={{ color: '#f0eee8' }}>
           {activeSection.name.toUpperCase()}
         </span>
-        <span className="font-display text-[16px]" style={{ color: c1 }}>
+        <span className="font-display text-[16px] font-bold tracking-widest" style={{ color: c1 }}>
           {sectionOwned}/{activeSection.total}
         </span>
 

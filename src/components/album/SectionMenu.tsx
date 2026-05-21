@@ -15,8 +15,8 @@ type StatusMap = Record<string, StickerStatus | { status: StickerStatus; quantit
 
 function MiniBar({ pct, color }: { pct: number; color: string }) {
   return (
-    <div className="w-full rounded-pill overflow-hidden" style={{ height: '3px', background: 'rgba(255,255,255,0.07)' }}>
-      <div style={{ width: `${pct}%`, height: '100%', background: color, borderRadius: '99px' }} />
+    <div className="w-full rounded-full overflow-hidden" style={{ height: '4px', background: 'rgba(255,255,255,0.08)' }}>
+      <div style={{ width: `${pct}%`, height: '100%', background: color, borderRadius: '99px', transition: 'width 0.5s cubic-bezier(0.4, 0, 0.2, 1)' }} />
     </div>
   );
 }
@@ -43,27 +43,28 @@ function SectionThumbnail({
       className="flex flex-col text-left card-hover-transition active:scale-95 relative overflow-hidden"
       style={{
         background: isSpecial
-          ? 'linear-gradient(135deg, rgba(250,199,30,0.12), rgba(250,199,30,0.04))'
-          : `linear-gradient(135deg, ${section.color}18, rgba(255,255,255,0.02))`,
+          ? 'linear-gradient(135deg, rgba(250,199,30,0.15), rgba(250,199,30,0.03))'
+          : `linear-gradient(135deg, ${section.color}15, rgba(255,255,255,0.02))`,
         border: isSpecial
-          ? '0.5px solid rgba(250,199,30,0.3)'
-          : `0.5px solid ${section.color}30`,
-        borderRadius: '16px',
-        padding: '14px 12px 12px',
+          ? '1px solid rgba(250,199,30,0.3)'
+          : `1px solid ${section.color}30`,
+        borderRadius: '20px',
+        padding: '16px 14px',
+        boxShadow: `0 8px 24px -8px ${section.color}15`,
       }}
     >
       {/* Color accent strip top */}
       <div
-        className="absolute top-0 left-0 right-0 h-0.5 rounded-t-2xl"
-        style={{ background: isSpecial ? '#FAC71E' : section.color, opacity: 0.6 }}
+        className="absolute top-0 left-0 right-0 h-1 rounded-t-2xl"
+        style={{ background: isSpecial ? '#FAC71E' : section.color, opacity: 0.8 }}
       />
 
       {/* Flag / icon */}
-      <span className="text-3xl mb-2 leading-none">{section.flag}</span>
+      <span className="text-[32px] mb-2.5 leading-none drop-shadow-sm">{section.flag}</span>
 
       {/* Name */}
       <span
-        className="font-display text-[15px] leading-tight tracking-wide mb-0.5"
+        className="font-display text-[15px] font-medium leading-tight tracking-wide mb-1"
         style={{ color: '#f0eee8' }}
       >
         {section.name.toUpperCase()}
@@ -71,8 +72,8 @@ function SectionThumbnail({
 
       {/* Code */}
       <span
-        className="font-body text-[10px] uppercase tracking-wider mb-3"
-        style={{ color: 'rgba(240,238,232,0.3)' }}
+        className="font-body text-[10px] font-bold uppercase tracking-[0.15em] mb-4"
+        style={{ color: 'rgba(240,238,232,0.45)' }}
       >
         {section.code}
       </span>
@@ -93,12 +94,12 @@ function SectionThumbnail({
       {/* Repeated badge */}
       {repeatedCount > 0 && (
         <div
-          className="absolute top-2.5 right-2.5 text-[9px] font-bold font-body px-1.5 py-0.5"
+          className="absolute top-3 right-3 text-[10px] font-bold font-body px-2 py-0.5 shadow-sm"
           style={{
             background: 'rgba(250,199,30,0.15)',
-            border: '0.5px solid rgba(250,199,30,0.3)',
+            border: '1px solid rgba(250,199,30,0.35)',
             color: '#FAC71E',
-            borderRadius: '6px',
+            borderRadius: '8px',
           }}
         >
           ×{repeatedCount}
@@ -165,13 +166,13 @@ export default function SectionMenu({
       )}
 
       {/* Team sections */}
-      <div className="flex items-center gap-2 mb-3">
-        <span className="text-[11px] uppercase tracking-[0.14em] font-body" style={{ color: 'rgba(240,238,232,0.25)' }}>
+      <div className="flex items-center gap-2 mb-4 mt-6">
+        <span className="text-[11px] uppercase tracking-[0.16em] font-bold font-body" style={{ color: 'rgba(240,238,232,0.35)' }}>
           SELECCIONES — {teams.length} EQUIPOS
         </span>
-        <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
+        <div className="flex-1 h-px" style={{ background: 'linear-gradient(90deg, rgba(255,255,255,0.08), transparent)' }} />
       </div>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {teams.map(s => (
           <SectionThumbnail
             key={s.code}

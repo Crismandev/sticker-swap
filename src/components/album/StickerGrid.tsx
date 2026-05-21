@@ -58,14 +58,15 @@ function StickerCard({
           onStatusChange(sticker.id, STATUS_CYCLE[nextIdx], 1);
         }
       }}
-      className="relative flex flex-col items-center justify-center gap-1 card-hover-transition active:scale-95 text-center px-1"
+      className="relative flex flex-col items-center justify-center gap-1.5 card-hover-transition active:scale-95 text-center px-1 shadow-sm"
       style={{
         aspectRatio: '3 / 4',
-        borderRadius: '10px',
-        border: `0.5px solid ${borderColor}`,
+        borderRadius: '12px',
+        border: `1px solid ${borderColor}`,
         background: bg,
         cursor: 'pointer',
         userSelect: 'none',
+        boxShadow: isFoil ? '0 4px 12px -4px rgba(192,160,255,0.15)' : 'none',
       }}
     >
       {/* Owned check badge */}
@@ -100,11 +101,11 @@ function StickerCard({
       )}
 
       {/* Icon */}
-      <span className="text-[10px]" style={{ color: codeColor }}>{icon}</span>
+      <span className="text-[12px] drop-shadow-sm" style={{ color: codeColor }}>{icon}</span>
 
       {/* Code */}
       <span
-        className="font-display text-[11px] leading-none tracking-wide"
+        className="font-display text-[12px] font-bold leading-none tracking-wider"
         style={{ color: codeColor }}
       >
         {sticker.code}
@@ -124,8 +125,8 @@ export default function StickerGrid({
 }) {
   return (
     <div
-      className="grid px-4"
-      style={{ gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px' }}
+      className="grid px-5"
+      style={{ gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px' }}
     >
       {stickers.map(s => (
         <StickerCard

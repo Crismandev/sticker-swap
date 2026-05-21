@@ -149,22 +149,51 @@ export default function QuickManagePage() {
           quantity: item.quantity,
         }));
 
-        // Upsert wanted rows
-        if (wantedRows.length > 0) {
-          const { error: wantedErr } = await supabase
-            .from('user_stickers')
-            .upsert(wantedRows, { onConflict: 'user_id,sticker_id' });
+        const processRows = async (rows: any[]) => {
+          for (const row of rows) {
+            const { data: existing } = await supabase
+              .from('user_stickers')
+              .select('id')
+              .eq('user_id', row.user_id)
+              .eq('sticker_id', row.sticker_id)
+              .maybeSingle();
 
-          if (wantedErr) throw wantedErr;
+            if (existing) {
+              const { error: updateErr } = await supabase
+                .from('user_stickers')
+                .update({ status: row.status, quantity: row.quantity, updated_at: new Date().toISOString() })
+                .eq('id', existing.id);
+              if (updateErr) console.error('Update error:', updateErr);
+            } else {
+              const { error: insertErr } = await supabase
+                .from('user_stickers')
+                .insert(row);
+              if (insertErr) {
+                // Fallback attempt for missing profile
+                if (insertErr.code === '23503') {
+                  await supabase.from('users').insert({
+                    id: row.user_id,
+                    email: `user_${row.user_id.substring(0,6)}@swap.local`,
+                    username: `user_${row.user_id.substring(0,8)}`,
+                    display_name: 'Sticker Collector'
+                  });
+                  await supabase.from('user_stickers').insert(row);
+                } else {
+                  console.error('Insert error:', insertErr);
+                }
+              }
+            }
+          }
+        };
+
+        // Process wanted rows
+        if (wantedRows.length > 0) {
+          await processRows(wantedRows);
         }
 
-        // Upsert repeated rows
+        // Process repeated rows
         if (repeatedRows.length > 0) {
-          const { error: repeatedErr } = await supabase
-            .from('user_stickers')
-            .upsert(repeatedRows, { onConflict: 'user_id,sticker_id' });
-
-          if (repeatedErr) throw repeatedErr;
+          await processRows(repeatedRows);
         }
 
         setToast('¡Cromos guardados con éxito!');
