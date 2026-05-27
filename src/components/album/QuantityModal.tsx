@@ -36,7 +36,7 @@ export default function QuantityModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fade-in"
+      className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fade-in"
       style={{
         background: 'rgba(5, 5, 8, 0.75)',
         backdropFilter: 'blur(8px)',
@@ -45,7 +45,7 @@ export default function QuantityModal({
       onClick={onClose}
     >
       <div
-        className="w-full sm:max-w-md bg-[#0e0e16] border-t sm:border border-[rgba(255,255,255,0.08)] rounded-t-3xl sm:rounded-2xl p-6 shadow-2xl animate-slide-up"
+        className="w-full sm:max-w-md bg-[#0e0e16] border-t sm:border border-[rgba(255,255,255,0.08)] rounded-t-3xl sm:rounded-2xl p-6 pb-12 sm:pb-6 shadow-2xl animate-slide-up"
         onClick={(e) => e.stopPropagation()}
         style={{
           boxShadow: '0 -10px 40px rgba(0,0,0,0.5), 0 10px 30px rgba(0,0,0,0.5)',

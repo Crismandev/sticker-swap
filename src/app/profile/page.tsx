@@ -472,14 +472,14 @@ export default function ProfilePage() {
 
       {/* Profile Edit Bottom Sheet Modal */}
       {isEditing && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center">
+        <div className="fixed inset-0 z-[100] flex items-end justify-center">
           {/* Backdrop */}
           <div
             className="absolute inset-0 bg-black/75 backdrop-blur-[6px] animate-fade-in"
             onClick={() => setIsEditing(false)}
           />
           {/* Bottom Sheet */}
-          <div className="relative w-full max-w-md bg-[#0f0f1c] border-t border-[rgba(255,255,255,0.12)] rounded-t-[32px] p-6 pb-8 animate-slide-up z-10 flex flex-col gap-5 shadow-2xl">
+          <div className="relative w-full max-w-md bg-[#0f0f1c] border-t border-[rgba(255,255,255,0.12)] rounded-t-[32px] p-6 pb-12 sm:pb-8 animate-slide-up z-10 flex flex-col gap-5 shadow-2xl">
             {/* Grabber indicator */}
             <div className="w-12 h-1.5 bg-[rgba(255,255,255,0.15)] rounded-full mx-auto" />
             

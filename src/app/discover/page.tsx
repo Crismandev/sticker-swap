@@ -201,7 +201,7 @@ export default function DiscoverPage() {
   const cardStackRef = useRef<CardStackHandle>(null);
 
   return (
-    <div className="relative min-h-screen pb-4 nav-pad">
+    <div className="relative min-h-screen pb-28 md:pb-8 nav-pad">
       {/* ── Header ──────────────────────────────── */}
       {loadState !== 'loading' && (
       <div className="flex items-center justify-between px-5 pt-8 pb-4">
@@ -278,7 +278,7 @@ export default function DiscoverPage() {
       {/* ── Mutual Match Popup ──────────────────── */}
       {matchPopup && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in"
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-fade-in"
           style={{
             background: 'rgba(5, 5, 8, 0.85)',
             backdropFilter: 'blur(10px)',

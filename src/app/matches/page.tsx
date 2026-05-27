@@ -72,7 +72,7 @@ export default function MatchesPage() {
   };
 
   return (
-    <div className="min-h-screen nav-pad pb-4">
+    <div className="min-h-screen nav-pad pb-28 md:pb-8">
       {/* Header */}
       <div className="px-4 pt-6 pb-4">
         <span className="block text-[10px] uppercase tracking-[0.18em]" style={{ color: '#FAC71E' }}>

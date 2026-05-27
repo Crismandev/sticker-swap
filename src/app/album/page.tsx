@@ -341,7 +341,7 @@ export default function AlbumPage() {
 
   if (view === 'menu') {
     return (
-      <div className="relative min-h-screen pb-4 animate-slide-up">
+      <div className="relative min-h-screen pb-28 md:pb-8 animate-slide-up">
         {/* Header */}
         <div className="flex items-center justify-between px-5 pt-8 pb-5">
           <div className="flex flex-col gap-1.5">
@@ -410,7 +410,7 @@ export default function AlbumPage() {
   // SECTION DETAIL VIEW — Personalized per country
   // ============================================================
   return (
-    <div className="relative min-h-screen pb-4">
+    <div className="relative min-h-screen pb-28 md:pb-8">
 
       {/* ── HERO BANNER ─────────────────────────────────────── */}
       <div
