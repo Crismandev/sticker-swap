@@ -211,7 +211,7 @@ export default function MatchChatPage({ params }: { params: Promise<{ id: string
   }
 
   return (
-    <div className="flex flex-col h-screen max-w-md mx-auto w-full bg-[#0a0a0f] text-[#f0eee8] overflow-hidden border-x border-[rgba(255,255,255,0.06)]">
+    <div className="flex flex-col h-screen w-full max-w-md md:max-w-2xl mx-auto bg-[#0a0a0f] text-[#f0eee8] overflow-hidden border-x border-[rgba(255,255,255,0.06)]">
       {/* ── Chat Header ────────────────────────────────────── */}
       <div
         className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-[rgba(255,255,255,0.06)]"

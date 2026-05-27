@@ -93,13 +93,18 @@ export default function MatchesPage() {
       {/* Not logged in */}
       {!loading && !loggedIn && (
         <div className="flex flex-col items-center gap-4 px-4 pt-20 text-center">
-          <span style={{ fontSize: 40 }}>🔐</span>
+          <div className="flex items-center justify-center w-16 h-16 rounded-full mb-2" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(240,238,232,0.4)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+          </div>
           <p className="font-display text-[24px]" style={{ color: 'rgba(240,238,232,0.3)' }}>INICIA SESIÓN</p>
           <p className="text-sm" style={{ color: 'rgba(240,238,232,0.3)' }}>Para ver tus matches de intercambio</p>
           <Link
             href="/login"
-            className="px-6 py-3 font-body font-medium text-sm"
-            style={{ background: '#FAC71E', color: '#0a0a0f', borderRadius: 12 }}
+            className="px-6 py-3 font-body font-medium text-sm transition-all active:scale-95 hover:scale-102"
+            style={{ background: '#FAC71E', color: '#0a0a0f', borderRadius: 12, cursor: 'pointer' }}
           >
             Iniciar sesión
           </Link>
@@ -109,15 +114,21 @@ export default function MatchesPage() {
       {/* Empty state */}
       {!loading && loggedIn && matches.length === 0 && (
         <div className="flex flex-col items-center gap-3 px-4 pt-20 text-center">
-          <span style={{ fontSize: 40 }}>🎴</span>
+          <div className="flex items-center justify-center w-16 h-16 rounded-full mb-2" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(240,238,232,0.4)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="9" y1="9" x2="15" y2="9"></line>
+              <line x1="9" y1="13" x2="13" y2="13"></line>
+            </svg>
+          </div>
           <p className="font-display text-[24px]" style={{ color: 'rgba(240,238,232,0.2)' }}>SIN MATCHES AÚN</p>
           <p className="text-sm max-w-xs" style={{ color: 'rgba(240,238,232,0.28)' }}>
             Ve a Descubrir y desliza a la derecha para crear intercambios
           </p>
           <Link
             href="/discover"
-            className="mt-2 px-6 py-3 font-body font-medium text-sm"
-            style={{ background: 'rgba(250,199,30,0.12)', border: '0.5px solid rgba(250,199,30,0.3)', color: '#FAC71E', borderRadius: 12 }}
+            className="mt-2 px-6 py-3 font-body font-medium text-sm transition-all active:scale-95 hover:scale-102"
+            style={{ background: 'rgba(250,199,30,0.12)', border: '0.5px solid rgba(250,199,30,0.3)', color: '#FAC71E', borderRadius: 12, cursor: 'pointer' }}
           >
             Ir a Descubrir →
           </Link>

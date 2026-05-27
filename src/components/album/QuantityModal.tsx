@@ -131,20 +131,27 @@ export default function QuantityModal({
                 onSetStatus('owned');
                 onClose();
               }}
-              className="py-2.5 rounded-xl font-body font-medium text-[12px] text-[#4ade80] border border-[rgba(74,222,128,0.2)] hover:bg-[rgba(74,222,128,0.05)] transition-all active:scale-[0.98]"
-              style={{ background: 'rgba(74,222,128,0.02)' }}
+              className="py-2.5 rounded-xl font-body font-medium text-[12px] text-[#4ade80] border border-[rgba(74,222,128,0.2)] hover:bg-[rgba(74,222,128,0.05)] transition-all active:scale-[0.98] flex items-center justify-center gap-1.5"
+              style={{ background: 'rgba(74,222,128,0.02)', cursor: 'pointer' }}
             >
-              ✓ Marcar pegada
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              Marcar pegada
             </button>
             <button
               onClick={() => {
                 onSetStatus('wanted');
                 onClose();
               }}
-              className="py-2.5 rounded-xl font-body font-medium text-[12px] text-[#fb7185] border border-[rgba(251,113,133,0.2)] hover:bg-[rgba(251,113,133,0.05)] transition-all active:scale-[0.98]"
-              style={{ background: 'rgba(251,113,133,0.02)' }}
+              className="py-2.5 rounded-xl font-body font-medium text-[12px] text-[#fb7185] border border-[rgba(251,113,133,0.2)] hover:bg-[rgba(251,113,133,0.05)] transition-all active:scale-[0.98] flex items-center justify-center gap-1.5"
+              style={{ background: 'rgba(251,113,133,0.02)', cursor: 'pointer' }}
             >
-              ✗ Marcar faltante
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+              Marcar faltante
             </button>
           </div>
 

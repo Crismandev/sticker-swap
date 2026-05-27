@@ -127,8 +127,7 @@ export default function StickerGrid({
 }) {
   return (
     <div
-      className="grid px-5"
-      style={{ gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px' }}
+      className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2.5 px-5"
     >
       {stickers.map(s => (
         <StickerCard

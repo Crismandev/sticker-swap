@@ -84,7 +84,11 @@ export default function MatchModal({
         />
 
         {/* Match icon */}
-        <div className="animate-bounce-in text-[52px] mb-3 leading-none">⚡</div>
+        <div className="animate-bounce-in flex items-center justify-center mx-auto w-16 h-16 rounded-full mb-4" style={{ background: 'rgba(46,213,115,0.1)', border: '1px solid rgba(46,213,115,0.3)', filter: 'drop-shadow(0 0 20px rgba(46,213,115,0.25))' }}>
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#2ED573" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+          </svg>
+        </div>
 
         {/* Title */}
         <p
@@ -163,25 +167,30 @@ export default function MatchModal({
         <button
           id="match-chat-btn"
           onClick={onChat}
-          className="w-full py-3.5 font-body font-bold text-[15px] mb-2.5 transition-all active:scale-[0.97]"
+          className="w-full py-3.5 font-body font-bold text-[15px] mb-2.5 transition-all active:scale-[0.97] flex items-center justify-center gap-2 hover:scale-[1.01]"
           style={{
             background: '#2ED573',
             color: '#052e16',
             borderRadius: '14px',
             boxShadow: '0 4px 20px rgba(46,213,115,0.35)',
+            cursor: 'pointer',
           }}
         >
-          🤝 Iniciar intercambio
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+          </svg>
+          Iniciar intercambio
         </button>
         <button
           id="match-skip-btn"
           onClick={onSkip}
-          className="w-full py-2.5 text-[13px] font-body font-medium transition-all active:scale-[0.97]"
+          className="w-full py-2.5 text-[13px] font-body font-medium transition-all active:scale-[0.97] hover:scale-[1.01]"
           style={{
             background: 'transparent',
             border: '1px solid rgba(255,255,255,0.08)',
             color: 'rgba(240,238,232,0.35)',
             borderRadius: '14px',
+            cursor: 'pointer',
           }}
         >
           Ver más matches →

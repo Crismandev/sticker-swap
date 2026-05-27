@@ -5,7 +5,7 @@
 
 function SkeletonBlock({ w = '100%', h = 16, radius = 10, className = '' }: {
   w?: string | number;
-  h?: number;
+  h?: string | number;
   radius?: number;
   className?: string;
 }) {

@@ -110,7 +110,7 @@ export default function BottomNav() {
             key={href}
             href={href}
             id={`nav-${label.toLowerCase()}`}
-            className="flex flex-col items-center gap-1.5 px-3"
+            className="flex flex-col items-center gap-1.5 px-3 transition-transform active:scale-95"
             aria-label={label}
           >
             <div

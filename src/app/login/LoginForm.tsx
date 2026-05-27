@@ -49,15 +49,12 @@ export default function LoginForm() {
   };
 
   const inputClass = `
-    w-full px-4 py-3 rounded-[12px] text-[14px] font-body
-    focus:outline-none transition-all
-    placeholder:text-[rgba(240,238,232,0.28)]
+    w-full px-4 py-3 rounded-[14px] text-[14px] font-body
+    bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)]
+    focus:outline-none focus:border-[#FFCB2F] focus:bg-[rgba(255,255,255,0.07)]
+    transition-all duration-200 text-[#f0eee8]
+    placeholder:text-[rgba(240,238,232,0.25)]
   `;
-  const inputStyle = {
-    background: 'rgba(255,255,255,0.05)',
-    border: '1px solid rgba(255,255,255,0.10)',
-    color: '#f0eee8',
-  };
 
   return (
     <form onSubmit={handleAuth} className="flex flex-col gap-4">
@@ -79,7 +76,6 @@ export default function LoginForm() {
             type="text"
             required
             className={inputClass}
-            style={inputStyle}
             placeholder="Nombre de usuario"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
@@ -90,7 +86,6 @@ export default function LoginForm() {
           type="email"
           required
           className={inputClass}
-          style={inputStyle}
           placeholder="Correo electrónico"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -100,7 +95,6 @@ export default function LoginForm() {
           type="password"
           required
           className={inputClass}
-          style={inputStyle}
           placeholder="Contraseña"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
@@ -123,8 +117,8 @@ export default function LoginForm() {
       <button
         type="submit"
         disabled={loading}
-        className="relative w-full py-3.5 rounded-[14px] font-body font-bold text-[15px] transition-all active:scale-[0.97] disabled:opacity-50"
-        style={{ background: '#FFCB2F', color: '#08080e', boxShadow: '0 4px 20px rgba(255,203,47,0.30)' }}
+        className="relative w-full py-3.5 rounded-[14px] font-body font-bold text-[15px] transition-all active:scale-[0.97] disabled:opacity-50 flex items-center justify-center gap-2 hover:scale-[1.01]"
+        style={{ background: '#FFCB2F', color: '#08080e', boxShadow: '0 4px 20px rgba(255,203,47,0.30)', cursor: 'pointer' }}
       >
         {loading ? (
           <span className="flex items-center justify-center gap-2">
@@ -132,7 +126,25 @@ export default function LoginForm() {
             Procesando...
           </span>
         ) : (
-          isRegistering ? '⚽ Crear mi cuenta' : '🔑 Iniciar sesión'
+          isRegistering ? (
+            <>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <line x1="19" y1="8" x2="19" y2="14"></line>
+                <line x1="16" y1="11" x2="22" y2="11"></line>
+              </svg>
+              Crear mi cuenta
+            </>
+          ) : (
+            <>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+              Iniciar sesión
+            </>
+          )
         )}
       </button>
 
@@ -148,8 +160,8 @@ export default function LoginForm() {
       <button
         type="button"
         onClick={() => { setIsRegistering(!isRegistering); setErrorMsg(''); setSuccessMsg(''); }}
-        className="w-full py-3 rounded-[14px] font-body font-semibold text-[14px] transition-all active:scale-[0.97]"
-        style={{ background: 'rgba(255,203,47,0.08)', border: '1px solid rgba(255,203,47,0.22)', color: '#FFCB2F' }}
+        className="w-full py-3 rounded-[14px] font-body font-semibold text-[14px] transition-all active:scale-[0.97] hover:scale-[1.01]"
+        style={{ background: 'rgba(255,203,47,0.08)', border: '1px solid rgba(255,203,47,0.22)', color: '#FFCB2F', cursor: 'pointer' }}
       >
         {isRegistering ? 'Iniciar sesión →' : 'Crear cuenta gratis →'}
       </button>

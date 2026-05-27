@@ -217,10 +217,15 @@ export default function QuickManagePage() {
   if (!userId) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-[#0a0a0f] p-4 text-center">
-        <span className="text-4xl">🔐</span>
+        <div className="flex items-center justify-center w-16 h-16 rounded-full mb-2" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(240,238,232,0.4)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+        </div>
         <p className="font-display text-[22px] text-[#f0eee8]">INICIA SESIÓN</p>
         <p className="text-sm text-[rgba(240,238,232,0.3)]">Para cargar tu lista de faltantes y sobrantes.</p>
-        <Link href="/login" className="px-6 py-3 bg-[#FAC71E] text-[#0a0a0f] font-semibold rounded-xl text-sm transition-all active:scale-[0.98]">
+        <Link href="/login" className="px-6 py-3 bg-[#FAC71E] text-[#0a0a0f] font-semibold rounded-xl text-sm transition-all active:scale-[0.98] hover:scale-[1.01]" style={{ cursor: 'pointer' }}>
           Iniciar sesión
         </Link>
       </div>
@@ -254,7 +259,12 @@ export default function QuickManagePage() {
         className="mb-6 p-4 border border-[rgba(255,255,255,0.06)] rounded-2xl bg-[#111119]"
       >
         <h4 className="text-[12px] font-bold text-[#FAC71E] uppercase tracking-wider mb-2 flex items-center gap-1.5">
-          <span>💡</span> Instrucciones de formato
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .6 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"></path>
+            <line x1="9" y1="18" x2="15" y2="18"></line>
+            <line x1="10" y1="22" x2="14" y2="22"></line>
+          </svg>
+          Instrucciones de formato
         </h4>
         <p className="text-xs text-[rgba(240,238,232,0.45)] leading-relaxed">
           Pega o escribe tu lista de códigos. El analizador identificará automáticamente los códigos válidos. 

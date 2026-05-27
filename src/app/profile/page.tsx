@@ -347,7 +347,9 @@ export default function ProfilePage() {
             }}
           >
             <span>Intercambiar</span>
-            <span className="text-[18px]">🔥</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </svg>
           </Link>
           <div className="flex" style={{ gap: '10px' }}>
             <button
@@ -367,14 +369,16 @@ export default function ProfilePage() {
             </button>
             <Link
               href="/album/quick"
-              className="flex-1 py-3 text-[13px] font-body font-semibold flex items-center justify-center gap-1.5 rounded-[14px] transition-all active:scale-[0.97]"
+              className="flex-1 py-3 text-[13px] font-body font-semibold flex items-center justify-center gap-2 rounded-[14px] transition-all active:scale-[0.97]"
               style={{
                 background: 'rgba(255,203,47,0.08)',
                 border: '1px solid rgba(255,203,47,0.22)',
                 color: '#FFCB2F',
               }}
             >
-              <span className="text-[16px]">⚡</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
+              </svg>
               Carga rápida
             </Link>
           </div>
@@ -409,7 +413,13 @@ export default function ProfilePage() {
             className="px-4 py-8 text-center border border-dashed border-[rgba(255,255,255,0.06)] rounded-2xl"
             style={{ background: 'rgba(255,255,255,0.01)' }}
           >
-            <span className="text-3xl block mb-2">🃏</span>
+            <div className="flex items-center justify-center mx-auto w-12 h-12 rounded-full mb-3" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(240,238,232,0.4)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="9" y1="9" x2="15" y2="9"></line>
+                <line x1="9" y1="13" x2="13" y2="13"></line>
+              </svg>
+            </div>
             <p className="text-xs text-[rgba(240,238,232,0.35)]">No tienes cromos repetidos marcados aún.</p>
             <Link href="/album" className="mt-2 inline-block text-xs font-semibold text-[#FAC71E] underline">
               Ir a mi Álbum
@@ -446,7 +456,12 @@ export default function ProfilePage() {
             className="px-4 py-8 text-center border border-dashed border-[rgba(255,255,255,0.06)] rounded-2xl"
             style={{ background: 'rgba(255,255,255,0.01)' }}
           >
-            <span className="text-3xl block mb-2">📋</span>
+            <div className="flex items-center justify-center mx-auto w-12 h-12 rounded-full mb-3" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(240,238,232,0.4)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+              </svg>
+            </div>
             <p className="text-xs text-[rgba(240,238,232,0.35)]">No has agregado cromos a tu lista de deseos.</p>
             <Link href="/album" className="mt-2 inline-block text-xs font-semibold text-[#fb7185] underline">
               Ir a mi Álbum
@@ -475,8 +490,12 @@ export default function ProfilePage() {
               <button
                 onClick={() => setIsEditing(false)}
                 className="w-8 h-8 rounded-full flex items-center justify-center bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.08)] text-[rgba(240,238,232,0.6)] active:scale-90 transition-all"
+                style={{ cursor: 'pointer' }}
               >
-                ✕
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
               </button>
             </div>
 
@@ -504,9 +523,25 @@ export default function ProfilePage() {
                       type="button"
                       onClick={handleDetectLocation}
                       disabled={detectingLocation}
-                      className="text-[9px] font-bold text-[#FFCB2F] hover:underline disabled:opacity-40"
+                      className="text-[9px] font-bold text-[#FFCB2F] hover:underline disabled:opacity-40 flex items-center gap-1"
+                      style={{ cursor: 'pointer' }}
                     >
-                      {detectingLocation ? '📍 Buscando...' : '📍 Auto'}
+                      {detectingLocation ? (
+                        <>
+                          <svg className="animate-spin" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <circle cx="12" cy="12" r="10" strokeDasharray="30 10" strokeDashoffset="0"></circle>
+                          </svg>
+                          <span>Buscando...</span>
+                        </>
+                      ) : (
+                        <>
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"></path>
+                            <circle cx="12" cy="10" r="3"></circle>
+                          </svg>
+                          <span>Auto</span>
+                        </>
+                      )}
                     </button>
                   </div>
                   <input

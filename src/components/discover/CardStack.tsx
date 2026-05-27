@@ -103,7 +103,7 @@ const CardStack = forwardRef<CardStackHandle, {
   if (remaining.length === 0) {
     return (
       <div
-        className="flex flex-col items-center justify-center gap-4 mx-4"
+        className="flex flex-col items-center justify-center gap-5 mx-4"
         style={{
           height: 'min(520px, 65vh)',
           background: 'linear-gradient(180deg, rgba(255,203,47,0.04) 0%, rgba(255,255,255,0.01) 100%)',
@@ -111,8 +111,14 @@ const CardStack = forwardRef<CardStackHandle, {
           borderRadius: 22,
         }}
       >
-        <div className="animate-float text-[56px] leading-none" style={{ filter: 'drop-shadow(0 0 16px rgba(255,203,47,0.3))' }}>🎴</div>
-        <p className="font-display text-[24px]" style={{ color: 'rgba(240,238,232,0.20)' }}>
+        <div className="animate-float flex items-center justify-center w-20 h-20 rounded-full" style={{ background: 'rgba(255,203,47,0.06)', border: '1.5px dashed rgba(255,203,47,0.3)', filter: 'drop-shadow(0 0 20px rgba(255,203,47,0.15))' }}>
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#FFCB2F" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+            <path d="M2 12h20"></path>
+          </svg>
+        </div>
+        <p className="font-display text-[22px] tracking-wide" style={{ color: 'rgba(240,238,232,0.25)' }}>
           SIN CANDIDATOS
         </p>
         <p className="text-[13px] text-center px-10 leading-relaxed font-body" style={{ color: 'rgba(240,238,232,0.32)' }}>

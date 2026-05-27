@@ -12,48 +12,59 @@ export default function ActionButtons({
   const btn = (
     id: string,
     onClick: () => void,
-    content: React.ReactNode,
+    icon: React.ReactNode,
     size: 'sm' | 'lg',
-    colors: { border: string; bg: string; color: string }
+    colors: { border: string; bg: string; color: string; glow: string }
   ) => {
-    const dim = size === 'lg' ? 60 : 46;
+    const dim = size === 'lg' ? 62 : 46;
     return (
       <button
         id={id}
         disabled={disabled}
         onClick={onClick}
-        className="flex items-center justify-center transition-state active:scale-90 disabled:opacity-30"
+        className="flex items-center justify-center transition-all duration-200 active:scale-90 disabled:opacity-30 hover:scale-105"
         style={{
           width: dim, height: dim,
           borderRadius: '50%',
-          border: `0.5px solid ${colors.border}`,
+          border: `1.5px solid ${colors.border}`,
           background: colors.bg,
           color: colors.color,
-          fontSize: size === 'lg' ? 22 : 16,
           flexShrink: 0,
+          boxShadow: `0 4px 16px ${colors.glow}`,
+          cursor: 'pointer',
         }}
       >
-        {content}
+        {icon}
       </button>
     );
   };
 
   return (
-    <div className="flex flex-col items-center gap-2 px-4 mt-4">
-      <div className="flex items-center justify-center gap-4">
-        {btn('btn-reject-sm', onReject, '✕',
-          'sm', { border: 'rgba(251,113,133,0.3)', bg: 'rgba(251,113,133,0.07)', color: '#fb7185' }
+    <div className="flex flex-col items-center gap-2 px-4 mt-5">
+      <div className="flex items-center justify-center gap-5">
+        {btn('btn-reject-sm', onReject, (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        ), 'sm', { border: 'rgba(255,71,87,0.25)', bg: 'rgba(255,71,87,0.08)', color: '#FF4757', glow: 'rgba(255,71,87,0.1)' }
         )}
-        {btn('btn-accept', onAccept, '✓',
-          'lg', { border: 'rgba(74,222,128,0.4)', bg: 'rgba(74,222,128,0.1)', color: '#4ade80' }
+        {btn('btn-accept', onAccept, (
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        ), 'lg', { border: 'rgba(46,213,115,0.35)', bg: 'rgba(46,213,115,0.12)', color: '#2ED573', glow: 'rgba(46,213,115,0.18)' }
         )}
-        {btn('btn-super', onSuper, '★',
-          'sm', { border: 'rgba(250,199,30,0.35)', bg: 'rgba(250,199,30,0.08)', color: '#FAC71E' }
+        {btn('btn-super', onSuper, (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+          </svg>
+        ), 'sm', { border: 'rgba(255,203,47,0.30)', bg: 'rgba(255,203,47,0.08)', color: '#FFCB2F', glow: 'rgba(255,203,47,0.1)' }
         )}
       </div>
-      <div className="flex justify-between w-full px-2">
-        <span className="text-[10px]" style={{ color: 'rgba(240,238,232,0.22)' }}>← pasar</span>
-        <span className="text-[10px]" style={{ color: 'rgba(240,238,232,0.22)' }}>intercambiar →</span>
+      <div className="flex justify-between w-full px-4 mt-1">
+        <span className="text-[10px] tracking-wider uppercase font-semibold" style={{ color: 'rgba(240,238,232,0.22)' }}>← pasar</span>
+        <span className="text-[10px] tracking-wider uppercase font-semibold" style={{ color: 'rgba(240,238,232,0.22)' }}>intercambiar →</span>
       </div>
     </div>
   );
