@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import SectionMenu from '@/components/album/SectionMenu';
@@ -8,63 +8,15 @@ import ProgressBar from '@/components/album/ProgressBar';
 import StatsRow from '@/components/album/StatsRow';
 import StickerGrid, { type StickerStatus } from '@/components/album/StickerGrid';
 import FilterPills from '@/components/album/FilterPills';
-import QuantityModal from '@/components/album/QuantityModal';
+import dynamic from 'next/dynamic';
 import { AlbumMenuSkeleton } from '@/components/ui/Skeletons';
+import { useApp } from '@/context/AppContext';
 
-// ============================================================
-// ALL 49 SECTIONS — matches the seed_wc2026.sql data exactly
-// color = primary team/country color, color2 = secondary accent
-// ============================================================
-const SECTIONS = [
-  { code: 'FWC', name: 'Sección Especial', flag: '🏆', color: '#C8A951', color2: '#f0e68c', total: 20, type: 'special' as const },
-  { code: 'MEX', name: 'México',           flag: '🇲🇽', color: '#006847', color2: '#CE1126', total: 20, type: 'team' as const },
-  { code: 'RSA', name: 'Sudáfrica',        flag: '🇿🇦', color: '#007A4D', color2: '#FFB612', total: 20, type: 'team' as const },
-  { code: 'KOR', name: 'Corea del Sur',    flag: '🇰🇷', color: '#CD2E3A', color2: '#003478', total: 20, type: 'team' as const },
-  { code: 'CZE', name: 'Chequia',          flag: '🇨🇿', color: '#D7141A', color2: '#11457E', total: 20, type: 'team' as const },
-  { code: 'CAN', name: 'Canadá',           flag: '🇨🇦', color: '#FF0000', color2: '#FFFFFF', total: 20, type: 'team' as const },
-  { code: 'BIH', name: 'Bosnia y Herz.',   flag: '🇧🇦', color: '#002395', color2: '#FECC02', total: 20, type: 'team' as const },
-  { code: 'QAT', name: 'Qatar',            flag: '🇶🇦', color: '#8D1B3D', color2: '#FFFFFF', total: 20, type: 'team' as const },
-  { code: 'SUI', name: 'Suiza',            flag: '🇨🇭', color: '#FF0000', color2: '#FFFFFF', total: 20, type: 'team' as const },
-  { code: 'BRA', name: 'Brasil',           flag: '🇧🇷', color: '#009C3B', color2: '#FEDF00', total: 20, type: 'team' as const },
-  { code: 'MAR', name: 'Marruecos',        flag: '🇲🇦', color: '#C1272D', color2: '#006233', total: 20, type: 'team' as const },
-  { code: 'HAI', name: 'Haití',            flag: '🇭🇹', color: '#00209F', color2: '#D21034', total: 20, type: 'team' as const },
-  { code: 'SCO', name: 'Escocia',          flag: '🏴󠁧󠁢󠁳󠁣󠁴󠁿', color: '#003B6F', color2: '#FFFFFF', total: 20, type: 'team' as const },
-  { code: 'USA', name: 'Estados Unidos',   flag: '🇺🇸', color: '#002868', color2: '#BF0A30', total: 20, type: 'team' as const },
-  { code: 'PAR', name: 'Paraguay',         flag: '🇵🇾', color: '#D52B1E', color2: '#FFFFFF', total: 20, type: 'team' as const },
-  { code: 'AUS', name: 'Australia',        flag: '🇦🇺', color: '#00843D', color2: '#FFD700', total: 20, type: 'team' as const },
-  { code: 'TUR', name: 'Türkiye',          flag: '🇹🇷', color: '#E30A17', color2: '#FFFFFF', total: 20, type: 'team' as const },
-  { code: 'GER', name: 'Alemania',         flag: '🇩🇪', color: '#3a3a3a', color2: '#DD0000', total: 20, type: 'team' as const },
-  { code: 'CUW', name: 'Curazao',          flag: '🇨🇼', color: '#002B7F', color2: '#F9E814', total: 20, type: 'team' as const },
-  { code: 'CIV', name: 'Costa de Marfil',  flag: '🇨🇮', color: '#F77F00', color2: '#009A44', total: 20, type: 'team' as const },
-  { code: 'ECU', name: 'Ecuador',          flag: '🇪🇨', color: '#FFD100', color2: '#0072C6', total: 20, type: 'team' as const },
-  { code: 'NED', name: 'Países Bajos',     flag: '🇳🇱', color: '#AE1C28', color2: '#FF6600', total: 20, type: 'team' as const },
-  { code: 'JPN', name: 'Japón',            flag: '🇯🇵', color: '#BC002D', color2: '#FFFFFF', total: 20, type: 'team' as const },
-  { code: 'SWE', name: 'Suecia',           flag: '🇸🇪', color: '#006AA7', color2: '#FECC02', total: 20, type: 'team' as const },
-  { code: 'TUN', name: 'Túnez',            flag: '🇹🇳', color: '#E70013', color2: '#FFFFFF', total: 20, type: 'team' as const },
-  { code: 'BEL', name: 'Bélgica',          flag: '🇧🇪', color: '#EF3340', color2: '#FDDA24', total: 20, type: 'team' as const },
-  { code: 'EGY', name: 'Egipto',           flag: '🇪🇬', color: '#CE1126', color2: '#FFFFFF', total: 20, type: 'team' as const },
-  { code: 'IRN', name: 'Irán',             flag: '🇮🇷', color: '#239f40', color2: '#FFFFFF', total: 20, type: 'team' as const },
-  { code: 'NZL', name: 'Nueva Zelanda',    flag: '🇳🇿', color: '#00247D', color2: '#CC142B', total: 20, type: 'team' as const },
-  { code: 'ESP', name: 'España',           flag: '🇪🇸', color: '#AA151B', color2: '#F1BF00', total: 20, type: 'team' as const },
-  { code: 'CPV', name: 'Cabo Verde',       flag: '🇨🇻', color: '#003893', color2: '#CF2027', total: 20, type: 'team' as const },
-  { code: 'KSA', name: 'Arabia Saudita',   flag: '🇸🇦', color: '#006C35', color2: '#FFFFFF', total: 20, type: 'team' as const },
-  { code: 'URU', name: 'Uruguay',          flag: '🇺🇾', color: '#5EB6E4', color2: '#FFFFFF', total: 20, type: 'team' as const },
-  { code: 'FRA', name: 'Francia',          flag: '🇫🇷', color: '#002395', color2: '#ED2939', total: 20, type: 'team' as const },
-  { code: 'SEN', name: 'Senegal',          flag: '🇸🇳', color: '#00853F', color2: '#FDEF42', total: 20, type: 'team' as const },
-  { code: 'IRQ', name: 'Irak',             flag: '🇮🇶', color: '#CE1126', color2: '#000000', total: 20, type: 'team' as const },
-  { code: 'NOR', name: 'Noruega',          flag: '🇳🇴', color: '#EF2B2D', color2: '#003087', total: 20, type: 'team' as const },
-  { code: 'ARG', name: 'Argentina',        flag: '🇦🇷', color: '#74ACDF', color2: '#FFFFFF', total: 20, type: 'team' as const },
-  { code: 'ALG', name: 'Argelia',          flag: '🇩🇿', color: '#006233', color2: '#FFFFFF', total: 20, type: 'team' as const },
-  { code: 'AUT', name: 'Austria',          flag: '🇦🇹', color: '#ED2939', color2: '#FFFFFF', total: 20, type: 'team' as const },
-  { code: 'JOR', name: 'Jordania',         flag: '🇯🇴', color: '#007A3D', color2: '#CE1126', total: 20, type: 'team' as const },
-  { code: 'POR', name: 'Portugal',         flag: '🇵🇹', color: '#006600', color2: '#FF0000', total: 20, type: 'team' as const },
-  { code: 'COL', name: 'Colombia',         flag: '🇨🇴', color: '#FCD116', color2: '#003087', total: 20, type: 'team' as const },
-  { code: 'GHA', name: 'Ghana',            flag: '🇬🇭', color: '#006B3F', color2: '#FCD116', total: 20, type: 'team' as const },
-  { code: 'PAN', name: 'Panamá',           flag: '🇵🇦', color: '#DA121A', color2: '#1B2FA1', total: 20, type: 'team' as const },
-  { code: 'CRO', name: 'Croacia',          flag: '🇭🇷', color: '#FF0000', color2: '#FFFFFF', total: 20, type: 'team' as const },
-  { code: 'COD', name: 'Congo DR',         flag: '🇨🇩', color: '#007FFF', color2: '#CE1021', total: 20, type: 'team' as const },
-  { code: 'ENG', name: 'Inglaterra',       flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', color: '#012169', color2: '#C8102E', total: 20, type: 'team' as const },
-];
+const QuantityModal = dynamic(() => import('@/components/album/QuantityModal'), {
+  ssr: false,
+});
+
+import { SECTIONS } from '@/lib/sections';
 
 const STICKER_NAMES: Record<string, string[]> = {
   FWC: ['Panini Logo','Official Emblem','Official Emblem','Official Mascots','Official Slogan','Official Ball','Canadá - Sedes','México - Sedes','USA - Sedes','Italia 1934','Uruguay 1950','Alemania Occ. 1954','Brasil 1962','Alemania Occ. 1974','Argentina 1986','Brasil 1994','Brasil 2002','Italia 2006','Alemania 2014','Argentina 2022'],
@@ -147,47 +99,18 @@ type View = 'menu' | 'section';
 type Toast = { text: string; color: string; key: number } | null;
 
 export default function AlbumPage() {
+  const { userId, statusMap, setStatusMap, loading } = useApp();
+
   const [view, setView]             = useState<View>('menu');
   const [activeCode, setActiveCode] = useState('MEX');
   const [filter, setFilter]         = useState<'all' | 'owned' | 'missing'>('all');
-  const [statusMap, setStatusMap]   = useState<Record<string, { status: StickerStatus; quantity: number }>>({});
   const [toast, setToast]           = useState<Toast>(null);
-  const [userId, setUserId]         = useState<string | null>(null);
-  const [fetching, setFetching]     = useState(true);
 
   // ── Quantity Modal State ───────────────────────────────
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedStickerId, setSelectedStickerId] = useState('');
   const [selectedStickerName, setSelectedStickerName] = useState('');
   const [selectedQuantity, setSelectedQuantity] = useState(1);
-
-  // ── Load user session + stickers from Supabase ────────
-  useEffect(() => {
-    const supabase = createClient();
-
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) { setFetching(false); return; }
-      setUserId(user.id);
-
-      // Load all user_stickers joined with sticker codes
-      supabase
-        .from('user_stickers')
-        .select('status, quantity, stickers(code)')
-        .eq('user_id', user.id)
-        .then(({ data }) => {
-          if (!data) { setFetching(false); return; }
-          const map: Record<string, { status: StickerStatus; quantity: number }> = {};
-          data.forEach((row: any) => {
-            const code = Array.isArray(row.stickers)
-              ? row.stickers[0]?.code
-              : row.stickers?.code;
-            if (code) map[code] = { status: row.status as StickerStatus, quantity: row.quantity || 1 };
-          });
-          setStatusMap(map);
-          setFetching(false);
-        });
-    });
-  }, []);
 
   // ── Totals ────────────────────────────────────────────
   const totalOwned    = useMemo(() => Object.values(statusMap).filter(s => s.status === 'owned' || s.status === 'repeated').length, [statusMap]);
@@ -349,7 +272,7 @@ export default function AlbumPage() {
   // ============================================================
   // MENU VIEW
   // ============================================================
-  if (fetching) return <AlbumMenuSkeleton />;
+  if (loading) return <AlbumMenuSkeleton />;
 
   if (view === 'menu') {
     return (

@@ -7,6 +7,7 @@ import CardStack, { type CardStackHandle } from '@/components/discover/CardStack
 import ActionButtons from '@/components/discover/ActionButtons';
 import { type MatchProfile } from '@/components/discover/MatchCard';
 import { DiscoverSkeleton } from '@/components/ui/Skeletons';
+import { useApp } from '@/context/AppContext';
 
 const ALBUM_ID = 'a0000000-0000-0000-0000-000000000001';
 
@@ -38,34 +39,33 @@ const DEMO_PROFILES: MatchProfile[] = [
 type LoadState = 'idle' | 'loading' | 'loaded' | 'error' | 'no-auth';
 
 export default function DiscoverPage() {
+  const { userId, loading: authLoading } = useApp();
   const [profiles, setProfiles]     = useState<MatchProfile[]>([]);
   const [loadState, setLoadState]   = useState<LoadState>('idle');
   const [matchCount, setMatchCount] = useState(0);
-  const [userId, setUserId]         = useState<string | null>(null);
   const [matchPopup, setMatchPopup] = useState<MatchProfile | null>(null);
 
   /* ── Load matches from Supabase ── */
   useEffect(() => {
+    if (authLoading) return;
+    if (!userId) {
+      setProfiles(DEMO_PROFILES);
+      setLoadState('no-auth');
+      return;
+    }
+
     const supabase = createClient();
     setLoadState('loading');
 
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
-      if (!user) {
-        setProfiles(DEMO_PROFILES);
-        setLoadState('no-auth');
-        return;
-      }
-
-      setUserId(user.id);
-
+    (async () => {
       try {
-        console.log('[Discover] Loading matches for user:', user.id);
+        console.log('[Discover] Loading matches for user:', userId);
 
         // 1. Verify user has repeated stickers at all
         const { data: myRepeated, error: repErr } = await supabase
           .from('user_stickers')
-          .select('id', { count: 'exact', head: false })
-          .eq('user_id', user.id)
+          .select('id')
+          .eq('user_id', userId)
           .eq('status', 'repeated');
 
         console.log('[Discover] My repeated stickers:', myRepeated?.length ?? 0, repErr || '');
@@ -73,7 +73,7 @@ export default function DiscoverPage() {
         // 2. Call find_matches RPC
         const { data: matches, error } = await supabase
           .rpc('find_matches', {
-            current_user_id: user.id,
+            current_user_id: userId,
             album_id_filter: ALBUM_ID,
           });
 
@@ -105,7 +105,7 @@ export default function DiscoverPage() {
             const { data: myCodes } = await supabase
               .from('user_stickers')
               .select('stickers(code)')
-              .eq('user_id', user.id)
+              .eq('user_id', userId)
               .eq('status', 'repeated')
               .limit(6);
 
@@ -149,8 +149,8 @@ export default function DiscoverPage() {
         setProfiles(DEMO_PROFILES);
         setLoadState('error');
       }
-    });
-  }, []);
+    })();
+  }, [userId, authLoading]);
 
   /* ── Accept: create swap_match in Supabase ── */
   const handleAccept = useCallback(async (profile: MatchProfile) => {

@@ -8,6 +8,8 @@ import ProgressBar from '@/components/album/ProgressBar';
 import StatsRow from '@/components/album/StatsRow';
 import Link from 'next/link';
 import { ProfileSkeleton, FullScreenLoader } from '@/components/ui/Skeletons';
+import { useApp } from '@/context/AppContext';
+import { SECTIONS } from '@/lib/sections';
 
 type TeamGroup = {
   team: string;
@@ -43,12 +45,13 @@ function SectionGroup({
 }
 
 export default function ProfilePage() {
-  const [userId, setUserId] = useState<string | null>(null);
-  const [username, setUsername] = useState('');
-  const [displayName, setDisplayName] = useState('');
-  const [city, setCity] = useState('');
-  const [country, setCountry] = useState('PE');
-  const [shareToken, setShareToken] = useState('');
+  const { userId, profile, statusMap, loading, refreshData, refreshProfileOnly, logout } = useApp();
+
+  const username = profile?.username || '';
+  const displayName = profile?.display_name || 'Sticker Collector';
+  const city = profile?.city || '';
+  const country = profile?.country || 'PE';
+  const shareToken = profile?.share_token || '';
 
   // Dev Console states
   const [isConsoleOpen, setIsConsoleOpen] = useState(false);
@@ -65,122 +68,83 @@ export default function ProfilePage() {
   const [editCountry, setEditCountry] = useState('PE');
   const [saving, setSaving] = useState(false);
   const [detectingLocation, setDetectingLocation] = useState(false);
-
-  // Stats
-  const [stats, setStats] = useState({
-    owned: 0,
-    repeated: 0,
-    missing: 980,
-    total: 980,
-  });
-
-  // Dynamic sticker lists
-  const [repeatedList, setRepeatedList] = useState<TeamGroup[]>([]);
-  const [missingList, setMissingList] = useState<TeamGroup[]>([]);
-
   const [toast, setToast] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
 
-  const fetchProfileAndStats = async (uid: string) => {
-    const supabase = createClient();
-
-    // 1. Fetch profile info
-    const { data: profile } = await supabase
-      .from('users')
-      .select('username, display_name, city, country, share_token')
-      .eq('id', uid)
-      .single();
-
+  // Sync editing fields with profile when it loads
+  useEffect(() => {
     if (profile) {
-      setUsername(profile.username || '');
-      setDisplayName(profile.display_name || '');
-      setCity(profile.city || '');
-      setCountry(profile.country || 'PE');
-      setShareToken(profile.share_token || '');
-
       setEditName(profile.display_name || '');
       setEditCity(profile.city || '');
       setEditCountry(profile.country || 'PE');
     }
+  }, [profile]);
 
-    // 2. Fetch owned statistics count
-    const { count: ownedCount } = await supabase
-      .from('user_stickers')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', uid)
-      .in('status', ['owned', 'repeated']);
-
-    // 3. Fetch repeated statistics count (sum of quantities)
-    const { data: repeatedRows } = await supabase
-      .from('user_stickers')
-      .select('quantity')
-      .eq('user_id', uid)
-      .eq('status', 'repeated');
-
-    const repCount = (repeatedRows || []).reduce((acc, row) => acc + (row.quantity || 1), 0);
-    const ownCount = ownedCount || 0;
-
-    setStats({
-      owned: ownCount,
-      repeated: repCount,
-      missing: Math.max(0, 980 - ownCount),
-      total: 980,
-    });
-
-    // 4. Fetch repeated stickers grouping by section
-    const { data: repeatedStickers } = await supabase
-      .from('user_stickers')
-      .select('quantity, stickers(code, name, sections(name, flag_emoji))')
-      .eq('user_id', uid)
-      .eq('status', 'repeated');
-
-    // 5. Fetch missing (wanted) stickers grouping by section
-    const { data: wantedStickers } = await supabase
-      .from('user_stickers')
-      .select('stickers(code, name, sections(name, flag_emoji))')
-      .eq('user_id', uid)
-      .eq('status', 'wanted');
-
-    // Helper to group by team
-    const groupByTeam = (data: any[]): TeamGroup[] => {
-      const groups: Record<string, { flag: string; codes: string[] }> = {};
-      data?.forEach(row => {
-        const sticker = Array.isArray(row.stickers) ? row.stickers[0] : row.stickers;
-        if (!sticker) return;
-        const section = sticker.sections || sticker.sections?.[0];
-        const teamName = section?.name || 'Especial';
-        const flag = section?.flag_emoji || '🏆';
-
-        if (!groups[teamName]) {
-          groups[teamName] = { flag, codes: [] };
-        }
-        const q = row.quantity && row.quantity > 1 ? ` (x${row.quantity})` : '';
-        groups[teamName].codes.push(`${sticker.code}${q}`);
-      });
-
-      return Object.entries(groups).map(([team, val]) => ({
-        team,
-        flag: val.flag,
-        codes: val.codes.sort(),
-      }));
+  // Stats
+  const stats = useMemo(() => {
+    const totalStickers = 980;
+    const owned = Object.values(statusMap).filter(s => s.status === 'owned' || s.status === 'repeated').length;
+    const repeated = Object.values(statusMap).reduce((acc, s) => acc + (s.status === 'repeated' ? s.quantity : 0), 0);
+    return {
+      owned,
+      repeated,
+      missing: Math.max(0, totalStickers - owned),
+      total: totalStickers,
     };
+  }, [statusMap]);
 
-    setRepeatedList(groupByTeam(repeatedStickers || []));
-    setMissingList(groupByTeam(wantedStickers || []));
-    setLoading(false);
-  };
+  // Dynamic sticker lists
+  const repeatedList = useMemo(() => {
+    const groups: Record<string, { flag: string; codes: string[] }> = {};
+    Object.entries(statusMap).forEach(([code, entry]) => {
+      if (entry.status !== 'repeated') return;
+      const prefix = code.slice(0, 3);
+      const section = SECTIONS.find(s => s.code === prefix) || { name: 'Especial', flag: '🏆' };
+      const teamName = section.name;
+      const flag = section.flag;
 
-  useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) {
-        setLoading(false);
-        return;
+      if (!groups[teamName]) {
+        groups[teamName] = { flag, codes: [] };
       }
-      setUserId(user.id);
-      fetchProfileAndStats(user.id);
+      const q = entry.quantity > 1 ? ` (x${entry.quantity})` : '';
+      groups[teamName].codes.push(`${code}${q}`);
     });
-  }, []);
+
+    return Object.entries(groups).map(([team, val]) => ({
+      team,
+      flag: val.flag,
+      codes: val.codes.sort((a, b) => {
+        const numA = parseInt(a.replace(/^\D+/g, ''), 10);
+        const numB = parseInt(b.replace(/^\D+/g, ''), 10);
+        return numA - numB;
+      }),
+    }));
+  }, [statusMap]);
+
+  const missingList = useMemo(() => {
+    const groups: Record<string, { flag: string; codes: string[] }> = {};
+    Object.entries(statusMap).forEach(([code, entry]) => {
+      if (entry.status !== 'wanted') return;
+      const prefix = code.slice(0, 3);
+      const section = SECTIONS.find(s => s.code === prefix) || { name: 'Especial', flag: '🏆' };
+      const teamName = section.name;
+      const flag = section.flag;
+
+      if (!groups[teamName]) {
+        groups[teamName] = { flag, codes: [] };
+      }
+      groups[teamName].codes.push(code);
+    });
+
+    return Object.entries(groups).map(([team, val]) => ({
+      team,
+      flag: val.flag,
+      codes: val.codes.sort((a, b) => {
+        const numA = parseInt(a.replace(/^\D+/g, ''), 10);
+        const numB = parseInt(b.replace(/^\D+/g, ''), 10);
+        return numA - numB;
+      }),
+    }));
+  }, [statusMap]);
 
   const handleSaveProfile = async () => {
     if (!userId || !editName.trim()) return;
@@ -202,9 +166,7 @@ export default function ProfilePage() {
       setToast('Error al guardar el perfil');
       setTimeout(() => setToast(null), 2000);
     } else {
-      setDisplayName(editName.trim());
-      setCity(editCity.trim());
-      setCountry(editCountry.trim());
+      await refreshProfileOnly();
       setIsEditing(false);
       setToast('¡Perfil actualizado con éxito!');
       setTimeout(() => setToast(null), 2000);
@@ -328,7 +290,7 @@ export default function ProfilePage() {
 
         if (error) throw error;
         setConsoleLog(prev => [...prev, '¡Exito! Todas las figuritas eliminadas.']);
-        await fetchProfileAndStats(userId);
+        await refreshData();
         return;
       }
 
@@ -373,7 +335,7 @@ export default function ProfilePage() {
         }
 
         setConsoleLog(prev => [...prev, `¡Exito! Álbum cargado con ${count} cromos (${pct}%).`]);
-        await fetchProfileAndStats(userId);
+        await refreshData();
         return;
       }
 
@@ -406,7 +368,7 @@ export default function ProfilePage() {
         if (insErr) throw insErr;
 
         setConsoleLog(prev => [...prev, `¡Exito! Añadidos ${count} cromos repetidos.`]);
-        await fetchProfileAndStats(userId);
+        await refreshData();
         return;
       }
 
@@ -439,7 +401,7 @@ export default function ProfilePage() {
         if (insErr) throw insErr;
 
         setConsoleLog(prev => [...prev, `¡Exito! Añadidos ${count} cromos faltantes.`]);
-        await fetchProfileAndStats(userId);
+        await refreshData();
         return;
       }
 

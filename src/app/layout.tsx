@@ -18,12 +18,14 @@ export const viewport: Viewport = {
 };
 
 import DesktopSidebar from '@/components/layout/DesktopSidebar';
+import { AppProvider } from '@/context/AppContext';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es" className="h-full">
       <body className="h-full antialiased" style={{ backgroundColor: '#020205', fontFamily: "'DM Sans', system-ui, sans-serif" }}>
-        <GridBackground>
+        <AppProvider>
+          <GridBackground>
           <div className="w-full max-w-md md:max-w-4xl lg:max-w-5xl mx-auto min-h-screen relative flex flex-col md:flex-row border-x border-[rgba(255,255,255,0.06)] bg-[#08080e] shadow-2xl pb-16 md:pb-0">
             {/* Sidebar for desktop/tablet */}
             <aside className="hidden md:flex md:w-64 md:flex-col md:border-r border-[rgba(255,255,255,0.06)] bg-[#08080e] p-6 shrink-0 relative z-50">
@@ -53,6 +55,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </div>
           </div>
         </GridBackground>
+       </AppProvider>
       </body>
     </html>
   );

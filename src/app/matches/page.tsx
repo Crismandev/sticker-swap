@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import Avatar from '@/components/ui/Avatar';
 import Link from 'next/link';
+import { useApp } from '@/context/AppContext';
 
 type Match = {
   id: string;
@@ -18,51 +19,55 @@ type Match = {
 };
 
 export default function MatchesPage() {
+  const { userId, loading: authLoading } = useApp();
   const [matches, setMatches] = useState<Match[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loggedIn, setLoggedIn] = useState(false);
+  const [loadingMatches, setLoadingMatches] = useState(true);
+
+  const loading = authLoading || (userId ? loadingMatches : false);
+  const loggedIn = !!userId;
 
   useEffect(() => {
+    if (authLoading) return;
+    if (!userId) {
+      setLoadingMatches(false);
+      return;
+    }
+
     const supabase = createClient();
-
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
-      if (!user) { setLoading(false); return; }
-      setLoggedIn(true);
-
-      const { data } = await supabase
-        .from('swap_matches')
-        .select(`
-          id, match_score, can_give, can_receive, status,
-          user_a:users!swap_matches_user_a_id_fkey(id, display_name, username, city),
-          user_b:users!swap_matches_user_b_id_fkey(id, display_name, username, city)
-        `)
-        .or(`user_a_id.eq.${user.id},user_b_id.eq.${user.id}`)
-        .order('created_at', { ascending: false });
-
-      if (data) {
-        const parsed: Match[] = data.map((m: any, idx: number) => {
-          const isA   = (Array.isArray(m.user_a) ? m.user_a[0]?.id : m.user_a?.id) === user.id;
-          const other = isA
-            ? (Array.isArray(m.user_b) ? m.user_b[0] : m.user_b)
-            : (Array.isArray(m.user_a) ? m.user_a[0] : m.user_a);
-          const name  = other?.display_name || other?.username || 'Usuario';
-          return {
-            id:           m.id,
-            otherName:    name,
-            otherInitials: name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase(),
-            otherCity:    other?.city || '',
-            canGive:      isA ? m.can_give : m.can_receive,
-            canReceive:   isA ? m.can_receive : m.can_give,
-            score:        m.match_score,
-            status:       m.status,
-            colorIndex:   idx % 6,
-          };
-        });
-        setMatches(parsed);
-      }
-      setLoading(false);
-    });
-  }, []);
+    supabase
+      .from('swap_matches')
+      .select(`
+        id, match_score, can_give, can_receive, status,
+        user_a:users!swap_matches_user_a_id_fkey(id, display_name, username, city),
+        user_b:users!swap_matches_user_b_id_fkey(id, display_name, username, city)
+      `)
+      .or(`user_a_id.eq.${userId},user_b_id.eq.${userId}`)
+      .order('created_at', { ascending: false })
+      .then(({ data }) => {
+        if (data) {
+          const parsed: Match[] = data.map((m: any, idx: number) => {
+            const isA   = (Array.isArray(m.user_a) ? m.user_a[0]?.id : m.user_a?.id) === userId;
+            const other = isA
+              ? (Array.isArray(m.user_b) ? m.user_b[0] : m.user_b)
+              : (Array.isArray(m.user_a) ? m.user_a[0] : m.user_a);
+            const name  = other?.display_name || other?.username || 'Usuario';
+            return {
+              id:           m.id,
+              otherName:    name,
+              otherInitials: name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase(),
+              otherCity:    other?.city || '',
+              canGive:      isA ? m.can_give : m.can_receive,
+              canReceive:   isA ? m.can_receive : m.can_give,
+              score:        m.match_score,
+              status:       m.status,
+              colorIndex:   idx % 6,
+            };
+          });
+          setMatches(parsed);
+        }
+        setLoadingMatches(false);
+      });
+  }, [userId, authLoading]);
 
   const statusLabel: Record<string, { label: string; color: string }> = {
     pending:   { label: 'Pendiente',  color: '#FAC71E' },
