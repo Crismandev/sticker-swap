@@ -45,7 +45,7 @@ function SectionGroup({
 }
 
 export default function ProfilePage() {
-  const { userId, profile, statusMap, loading, refreshData, refreshProfileOnly, logout } = useApp();
+  const { userId, profile, statusMap, setStatusMap, loading, refreshData, refreshProfileOnly, logout } = useApp();
 
   const username = profile?.username || '';
   const displayName = profile?.display_name || 'Sticker Collector';
@@ -78,6 +78,81 @@ export default function ProfilePage() {
       setEditCountry(profile.country || 'PE');
     }
   }, [profile]);
+
+  type StickerStatus = 'owned' | 'repeated' | 'wanted';
+
+  const [codeToIdMap, setCodeToIdMap] = useState<Record<string, string>>({});
+  const [activeTab, setActiveTab] = useState<'summary' | 'organizer'>('summary');
+  const [expandedSection, setExpandedSection] = useState<string | null>(null);
+  const [activeConfigCode, setActiveConfigCode] = useState<string | null>(null);
+
+  // Load valid sticker codes -> ID mapping for fast status toggle
+  useEffect(() => {
+    const supabase = createClient();
+    supabase
+      .from('stickers')
+      .select('id, code')
+      .then(({ data }) => {
+        if (data) {
+          const map: Record<string, string> = {};
+          data.forEach(s => {
+            map[s.code.toUpperCase()] = s.id;
+          });
+          setCodeToIdMap(map);
+        }
+      });
+  }, []);
+
+  const handleStickerStatusChange = async (code: string, status: StickerStatus, quantity: number = 1) => {
+    if (!userId) return;
+    const stickerId = codeToIdMap[code.toUpperCase()];
+    if (!stickerId) return;
+
+    // 1. Optimistic update in context statusMap
+    const previousMap = { ...statusMap };
+    const updatedMap = { ...statusMap };
+    
+    if (status === 'wanted' && quantity === 0) {
+      delete updatedMap[code];
+    } else {
+      updatedMap[code] = { status, quantity };
+    }
+    setStatusMap(updatedMap);
+
+    // 2. Perform DB update in background
+    const supabase = createClient();
+    try {
+      if (status === 'wanted' && quantity === 0) {
+        await supabase
+          .from('user_stickers')
+          .delete()
+          .eq('user_id', userId)
+          .eq('sticker_id', stickerId);
+      } else {
+        const { data: existing } = await supabase
+          .from('user_stickers')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('sticker_id', stickerId)
+          .maybeSingle();
+
+        if (existing) {
+          await supabase
+            .from('user_stickers')
+            .update({ status, quantity, updated_at: new Date().toISOString() })
+            .eq('id', existing.id);
+        } else {
+          await supabase
+            .from('user_stickers')
+            .insert({ user_id: userId, sticker_id: stickerId, status, quantity });
+        }
+      }
+    } catch (err) {
+      console.error('Error updating status:', err);
+      // Fallback
+      setStatusMap(previousMap);
+    }
+  };
 
   // Stats
   const stats = useMemo(() => {
@@ -122,17 +197,23 @@ export default function ProfilePage() {
 
   const missingList = useMemo(() => {
     const groups: Record<string, { flag: string; codes: string[] }> = {};
-    Object.entries(statusMap).forEach(([code, entry]) => {
-      if (entry.status !== 'wanted') return;
-      const prefix = code.slice(0, 3);
-      const section = SECTIONS.find(s => s.code === prefix) || { name: 'Especial', flag: '🏆' };
+    SECTIONS.forEach(section => {
       const teamName = section.name;
       const flag = section.flag;
+      const codes: string[] = [];
 
-      if (!groups[teamName]) {
-        groups[teamName] = { flag, codes: [] };
+      for (let i = 1; i <= section.total; i++) {
+        const code = `${section.code}${i}`;
+        const entry = statusMap[code];
+        // If it's not owned and not repeated, it's missing!
+        if (!entry || (entry.status !== 'owned' && entry.status !== 'repeated')) {
+          codes.push(code);
+        }
       }
-      groups[teamName].codes.push(code);
+
+      if (codes.length > 0) {
+        groups[teamName] = { flag, codes };
+      }
     });
 
     return Object.entries(groups).map(([team, val]) => ({
@@ -560,90 +641,376 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Repeated section */}
+      {/* Tab Selector */}
       <div className="px-4 pt-6">
-        <div className="flex items-center gap-2 mb-4">
-          <h2 className="font-display text-[18px] tracking-wide text-[#f0eee8]">
-            DISPONIBLES PARA INTERCAMBIO
-          </h2>
-          <span
-            className="text-[11px] font-body font-medium px-2 py-0.5"
+        <div 
+          className="flex p-1 rounded-xl bg-[#111119] border border-[rgba(255,255,255,0.06)]"
+        >
+          <button
+            onClick={() => setActiveTab('summary')}
+            className="flex-1 py-2.5 rounded-lg text-xs font-semibold transition-all"
             style={{
-              background: 'rgba(250,199,30,0.1)',
-              border: '0.5px solid rgba(250,199,30,0.25)',
-              color: '#FAC71E',
-              borderRadius: '10px',
+              background: activeTab === 'summary' ? 'rgba(255,255,255,0.04)' : 'transparent',
+              border: activeTab === 'summary' ? '1px solid rgba(255,255,255,0.08)' : '1px solid transparent',
+              color: activeTab === 'summary' ? '#f0eee8' : 'rgba(240,238,232,0.4)',
             }}
           >
-            {repeatedList.reduce((s, g) => s + g.codes.length, 0)}
-          </span>
-        </div>
-
-        {repeatedList.length > 0 ? (
-          repeatedList.map(g => (
-            <SectionGroup key={g.team} {...g} variant="give" />
-          ))
-        ) : (
-          <div
-            className="px-4 py-8 text-center border border-dashed border-[rgba(255,255,255,0.06)] rounded-2xl"
-            style={{ background: 'rgba(255,255,255,0.01)' }}
-          >
-            <div className="flex items-center justify-center mx-auto w-12 h-12 rounded-full mb-3" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(240,238,232,0.4)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                <line x1="9" y1="9" x2="15" y2="9"></line>
-                <line x1="9" y1="13" x2="13" y2="13"></line>
-              </svg>
-            </div>
-            <p className="text-xs text-[rgba(240,238,232,0.35)]">No tienes cromos repetidos marcados aún.</p>
-            <Link href="/album" className="mt-2 inline-block text-xs font-semibold text-[#FAC71E] underline">
-              Ir a mi Álbum
-            </Link>
-          </div>
-        )}
-      </div>
-
-      {/* Missing section */}
-      <div className="px-4 pt-6 pb-10">
-        <div className="flex items-center gap-2 mb-4">
-          <h2 className="font-display text-[18px] tracking-wide text-[#f0eee8]">
-            ME FALTAN (EN MI LISTA DE DESEOS)
-          </h2>
-          <span
-            className="text-[11px] font-body font-medium px-2 py-0.5"
+            Lista de Intercambio
+          </button>
+          <button
+            onClick={() => setActiveTab('organizer')}
+            className="flex-1 py-2.5 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5"
             style={{
-              background: 'rgba(251,113,133,0.1)',
-              border: '0.5px solid rgba(251,113,133,0.25)',
-              color: '#fb7185',
-              borderRadius: '10px',
+              background: activeTab === 'organizer' ? 'rgba(255,255,255,0.04)' : 'transparent',
+              border: activeTab === 'organizer' ? '1px solid rgba(255,255,255,0.08)' : '1px solid transparent',
+              color: activeTab === 'organizer' ? '#FAC71E' : 'rgba(240,238,232,0.4)',
             }}
           >
-            {missingList.reduce((s, g) => s + g.codes.length, 0)}
-          </span>
+            <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#FAC71E' }} />
+            Organizador Visual
+          </button>
         </div>
-
-        {missingList.length > 0 ? (
-          missingList.map(g => (
-            <SectionGroup key={g.team} {...g} variant="get" />
-          ))
-        ) : (
-          <div
-            className="px-4 py-8 text-center border border-dashed border-[rgba(255,255,255,0.06)] rounded-2xl"
-            style={{ background: 'rgba(255,255,255,0.01)' }}
-          >
-            <div className="flex items-center justify-center mx-auto w-12 h-12 rounded-full mb-3" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(240,238,232,0.4)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
-                <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
-              </svg>
-            </div>
-            <p className="text-xs text-[rgba(240,238,232,0.35)]">No has agregado cromos a tu lista de deseos.</p>
-            <Link href="/album" className="mt-2 inline-block text-xs font-semibold text-[#fb7185] underline">
-              Ir a mi Álbum
-            </Link>
-          </div>
-        )}
       </div>
+
+      {activeTab === 'summary' ? (
+        <>
+          {/* Repeated section */}
+          <div className="px-4 pt-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <h2 className="font-display text-[18px] tracking-wide text-[#f0eee8]">
+                  DISPONIBLES PARA INTERCAMBIO
+                </h2>
+                <span
+                  className="text-[11px] font-body font-medium px-2 py-0.5"
+                  style={{
+                    background: 'rgba(250,199,30,0.1)',
+                    border: '0.5px solid rgba(250,199,30,0.25)',
+                    color: '#FAC71E',
+                    borderRadius: '10px',
+                  }}
+                >
+                  {repeatedList.reduce((s, g) => s + g.codes.length, 0)}
+                </span>
+              </div>
+              <button
+                onClick={() => {
+                  const listText = repeatedList.map(g => `${g.team}: ${g.codes.join(', ')}`).join('\n');
+                  if (!listText) {
+                    setToast('No tienes repetidas para copiar');
+                    setTimeout(() => setToast(null), 2000);
+                    return;
+                  }
+                  navigator.clipboard.writeText(listText);
+                  setToast('📋 ¡Lista de repetidas copiada!');
+                  setTimeout(() => setToast(null), 2000);
+                }}
+                className="text-[11px] font-body font-semibold px-2.5 py-1.5 rounded-lg flex items-center gap-1 active:scale-95 transition-all"
+                style={{
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(255,255,255,0.06)',
+                  color: 'rgba(240,238,232,0.6)'
+                }}
+              >
+                <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M4 12v2a2 2 0 002 2h8a2 2 0 002-2V6a2 2 0 00-2-2h-2M10 4V2a2 2 0 00-2-2H2a2 2 0 00-2 2v8a2 2 0 002 2h2" />
+                </svg>
+                Copiar
+              </button>
+            </div>
+
+            {repeatedList.length > 0 ? (
+              repeatedList.map(g => (
+                <SectionGroup key={g.team} {...g} variant="give" />
+              ))
+            ) : (
+              <div
+                className="px-4 py-8 text-center border border-dashed border-[rgba(255,255,255,0.06)] rounded-2xl"
+                style={{ background: 'rgba(255,255,255,0.01)' }}
+              >
+                <div className="flex items-center justify-center mx-auto w-12 h-12 rounded-full mb-3" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(240,238,232,0.4)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="9" y1="9" x2="15" y2="9"></line>
+                    <line x1="9" y1="13" x2="13" y2="13"></line>
+                  </svg>
+                </div>
+                <p className="text-xs text-[rgba(240,238,232,0.35)]">No tienes cromos repetidos marcados aún.</p>
+                <button onClick={() => setActiveTab('organizer')} className="mt-2 text-xs font-semibold text-[#FAC71E] underline bg-transparent border-none cursor-pointer">
+                  Ir al Organizador Visual
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Missing section */}
+          <div className="px-4 pt-6 pb-10">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <h2 className="font-display text-[18px] tracking-wide text-[#f0eee8]">
+                  ME FALTAN (EN MI ALBUM)
+                </h2>
+                <span
+                  className="text-[11px] font-body font-medium px-2 py-0.5"
+                  style={{
+                    background: 'rgba(251,113,133,0.1)',
+                    border: '0.5px solid rgba(251,113,133,0.25)',
+                    color: '#fb7185',
+                    borderRadius: '10px',
+                  }}
+                >
+                  {missingList.reduce((s, g) => s + g.codes.length, 0)}
+                </span>
+              </div>
+              <button
+                onClick={() => {
+                  const listText = missingList.map(g => `${g.team}: ${g.codes.join(', ')}`).join('\n');
+                  if (!listText) {
+                    setToast('¡Álbum completo! No te faltan cromos');
+                    setTimeout(() => setToast(null), 2000);
+                    return;
+                  }
+                  navigator.clipboard.writeText(listText);
+                  setToast('📋 ¡Lista de faltantes copiada!');
+                  setTimeout(() => setToast(null), 2000);
+                }}
+                className="text-[11px] font-body font-semibold px-2.5 py-1.5 rounded-lg flex items-center gap-1 active:scale-95 transition-all"
+                style={{
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(255,255,255,0.06)',
+                  color: 'rgba(240,238,232,0.6)'
+                }}
+              >
+                <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M4 12v2a2 2 0 002 2h8a2 2 0 002-2V6a2 2 0 00-2-2h-2M10 4V2a2 2 0 00-2-2H2a2 2 0 00-2 2v8a2 2 0 002 2h2" />
+                </svg>
+                Copiar
+              </button>
+            </div>
+
+            {missingList.length > 0 ? (
+              missingList.map(g => (
+                <SectionGroup key={g.team} {...g} variant="get" />
+              ))
+            ) : (
+              <div
+                className="px-4 py-8 text-center border border-dashed border-[rgba(255,255,255,0.06)] rounded-2xl"
+                style={{ background: 'rgba(255,255,255,0.01)' }}
+              >
+                <div className="flex items-center justify-center mx-auto w-12 h-12 rounded-full mb-3" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(240,238,232,0.4)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                    <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                  </svg>
+                </div>
+                <p className="text-xs text-[rgba(240,238,232,0.35)]">¡Felicitaciones! No te falta ningún cromo.</p>
+              </div>
+            )}
+          </div>
+        </>
+      ) : (
+        /* Interactive Visual Organizer accordion checklist */
+        <div className="px-4 pt-4 pb-12 flex flex-col gap-2.5">
+          <div className="p-3.5 border border-[rgba(255,203,47,0.12)] rounded-xl bg-[rgba(255,203,47,0.02)] flex gap-2">
+            <span className="text-sm">💡</span>
+            <div className="flex flex-col gap-0.5">
+              <p className="text-[11px] font-medium text-[rgba(240,238,232,0.85)]">
+                Toca cualquier número para cambiar su estado.
+              </p>
+              <p className="text-[10px] text-[rgba(240,238,232,0.45)]">
+                Faltante (gris) ➔ Pegada (verde) ➔ Repetida (dorado con cantidad).
+              </p>
+            </div>
+          </div>
+
+          {SECTIONS.map(section => {
+            const isExpanded = expandedSection === section.code;
+            
+            // Calculate progress for this section
+            let ownedCount = 0;
+            for (let i = 1; i <= section.total; i++) {
+              const code = `${section.code}${i}`;
+              const entry = statusMap[code];
+              if (entry && (entry.status === 'owned' || entry.status === 'repeated')) {
+                ownedCount++;
+              }
+            }
+            
+            return (
+              <div 
+                key={section.code} 
+                className="border rounded-2xl overflow-hidden transition-all bg-[#111119]"
+                style={{
+                  borderColor: isExpanded ? 'rgba(250,199,30,0.22)' : 'rgba(255,255,255,0.06)',
+                }}
+              >
+                {/* Header */}
+                <button
+                  onClick={() => setExpandedSection(isExpanded ? null : section.code)}
+                  className="w-full px-4 py-3.5 flex items-center justify-between transition-colors active:bg-white/[0.01]"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">{section.flag}</span>
+                    <span className="text-xs font-bold text-[#f0eee8] text-left">{section.name}</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-white/5 text-[rgba(240,238,232,0.6)]">
+                      {ownedCount}/{section.total} pegadas
+                    </span>
+                    <svg 
+                      width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" 
+                      className={`transition-transform duration-200 text-[rgba(240,238,232,0.4)] ${isExpanded ? 'rotate-180' : ''}`}
+                    >
+                      <path d="M6 9l6 6 6-6" />
+                    </svg>
+                  </div>
+                </button>
+                
+                {/* Expanded sticker grid */}
+                {isExpanded && (
+                  <div className="px-4 pb-4 pt-2 border-t border-[rgba(255,255,255,0.04)] bg-[#0c0c14]">
+                    <div className="grid grid-cols-5 gap-2">
+                      {Array.from({ length: section.total }, (_, i) => {
+                        const number = i + 1;
+                        const code = `${section.code}${number}`;
+                        const entry = statusMap[code];
+                        const status = entry?.status || 'wanted';
+                        const quantity = entry?.quantity || 0;
+                        
+                        let bg = 'rgba(255,255,255,0.02)';
+                        let border = '1px solid rgba(255,255,255,0.06)';
+                        let text = 'rgba(240,238,232,0.3)';
+                        
+                        if (status === 'owned') {
+                          bg = 'rgba(74,222,128,0.08)';
+                          border = '1.5px solid #4ade80';
+                          text = '#4ade80';
+                        } else if (status === 'repeated') {
+                          bg = 'rgba(250,199,30,0.1)';
+                          border = '1.5px solid #FAC71E';
+                          text = '#FAC71E';
+                        }
+                        
+                        const isConfigOpen = activeConfigCode === code;
+                        
+                        return (
+                          <div key={code} className="relative">
+                            <button
+                              onClick={() => setActiveConfigCode(isConfigOpen ? null : code)}
+                              className="w-full aspect-square flex flex-col items-center justify-center rounded-xl transition-all active:scale-95 text-xs font-mono relative"
+                              style={{ background: bg, border, color: text }}
+                            >
+                              <span className="font-bold">{number}</span>
+                              {status === 'repeated' && (
+                                <span 
+                                  className="absolute -top-1.5 -right-1 text-[8px] font-bold px-1.5 py-0.5 rounded-full border"
+                                  style={{ 
+                                    background: '#FAC71E', 
+                                    color: '#08080e',
+                                    borderColor: '#08080e',
+                                    transform: 'scale(0.85)'
+                                  }}
+                                >
+                                  x{quantity}
+                                </span>
+                              )}
+                            </button>
+                            
+                            {/* Inline status config panel */}
+                            {isConfigOpen && (
+                              <div 
+                                className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2.5 z-30 p-2 flex flex-col gap-1.5 rounded-xl border shadow-2xl animate-toast-in"
+                                style={{ 
+                                  background: '#161624', 
+                                  borderColor: 'rgba(255,255,255,0.12)',
+                                  minWidth: '150px'
+                                }}
+                              >
+                                <div className="text-[10px] text-[rgba(240,238,232,0.4)] text-center font-mono border-b border-white/5 pb-1 font-bold">
+                                  {code}
+                                </div>
+                                <div className="flex gap-1 justify-between">
+                                  {/* Toggle Wanted (missing) */}
+                                  <button
+                                    onClick={() => {
+                                      handleStickerStatusChange(code, 'wanted', 0);
+                                      setActiveConfigCode(null);
+                                    }}
+                                    className="flex-1 py-1.5 rounded-lg flex flex-col items-center justify-center gap-1 active:scale-90 transition-all hover:bg-white/5"
+                                  >
+                                    <span className="text-sm">❌</span>
+                                    <span className="text-[9px] text-[rgba(240,238,232,0.5)]">Falta</span>
+                                  </button>
+                                  
+                                  {/* Toggle Owned */}
+                                  <button
+                                    onClick={() => {
+                                      handleStickerStatusChange(code, 'owned', 1);
+                                      setActiveConfigCode(null);
+                                    }}
+                                    className="flex-1 py-1.5 rounded-lg flex flex-col items-center justify-center gap-1 active:scale-90 transition-all hover:bg-white/5"
+                                  >
+                                    <span className="text-sm">✅</span>
+                                    <span className="text-[9px] text-[#4ade80]">Tengo</span>
+                                  </button>
+                                  
+                                  {/* Toggle Repeated */}
+                                  <button
+                                    onClick={() => {
+                                      const newQty = status === 'repeated' ? quantity + 1 : 2;
+                                      handleStickerStatusChange(code, 'repeated', newQty);
+                                    }}
+                                    className="flex-1 py-1.5 rounded-lg flex flex-col items-center justify-center gap-1 active:scale-90 transition-all hover:bg-white/5"
+                                  >
+                                    <span className="text-sm">🔁</span>
+                                    <span className="text-[9px] text-[#FAC71E]">Repetida</span>
+                                  </button>
+                                </div>
+
+                                {status === 'repeated' && (
+                                  <div className="flex items-center justify-between border-t border-white/5 pt-1.5 mt-0.5">
+                                    <span className="text-[9px] text-[rgba(240,238,232,0.4)]">Cantidad:</span>
+                                    <div className="flex gap-1.5 items-center">
+                                      <button 
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          if (quantity > 2) {
+                                            handleStickerStatusChange(code, 'repeated', quantity - 1);
+                                          } else {
+                                            handleStickerStatusChange(code, 'owned', 1);
+                                            setActiveConfigCode(null);
+                                          }
+                                        }}
+                                        className="w-4 h-4 flex items-center justify-center rounded bg-white/10 text-[10px] font-bold text-white hover:bg-white/15"
+                                      >
+                                        -
+                                      </button>
+                                      <span className="text-[10px] font-mono font-bold text-[#FAC71E] min-w-[12px] text-center">{quantity}</span>
+                                      <button 
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleStickerStatusChange(code, 'repeated', quantity + 1);
+                                        }}
+                                        className="w-4 h-4 flex items-center justify-center rounded bg-white/10 text-[10px] font-bold text-white hover:bg-white/15"
+                                      >
+                                        +
+                                      </button>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Profile Edit Bottom Sheet Modal */}
       {isEditing && (

@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import { SECTIONS } from '@/lib/sections';
 
 type StickerItem = {
   status: string;
@@ -23,15 +24,14 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
     notFound();
   }
 
-  // Fetch their repeated and wanted stickers
+  // Fetch their repeated and owned stickers
   const { data: stickersData } = await supabase
     .from('user_stickers')
     .select('status, quantity, stickers(code, name, is_foil, sections(name, flag_emoji))')
     .eq('user_id', user.id)
-    .in('status', ['repeated', 'wanted']);
+    .in('status', ['repeated', 'owned']);
 
   const repeated = (stickersData || []).filter(s => s.status === 'repeated');
-  const wanted = (stickersData || []).filter(s => s.status === 'wanted');
 
   // Group repeated by section
   const repeatedGrouped: Record<string, { flag: string; list: string[] }> = {};
@@ -48,18 +48,37 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
     repeatedGrouped[sectionName].list.push(`${sticker.code}${suffix}`);
   });
 
-  // Group wanted by section
+  // Find all sticker codes in the album that they do not own
+  const ownedSet = new Set(
+    (stickersData || [])
+      .filter(s => s.status === 'owned' || s.status === 'repeated')
+      .map(s => {
+        const sticker = Array.isArray(s.stickers) ? s.stickers[0] : s.stickers;
+        return sticker?.code?.toUpperCase();
+      })
+      .filter(Boolean)
+  );
+
+  // Group missing (wanted) by section
   const wantedGrouped: Record<string, { flag: string; list: string[] }> = {};
-  wanted.forEach(w => {
-    const sticker = Array.isArray(w.stickers) ? w.stickers[0] : w.stickers;
-    if (!sticker) return;
-    const section = Array.isArray(sticker.sections) ? sticker.sections[0] : sticker.sections;
-    const sectionName = section?.name || 'Especial';
-    const flag = section?.flag_emoji || '🏆';
-    if (!wantedGrouped[sectionName]) {
-      wantedGrouped[sectionName] = { flag, list: [] };
+  let wantedCount = 0;
+
+  SECTIONS.forEach(section => {
+    const teamName = section.name;
+    const flag = section.flag;
+    const list: string[] = [];
+
+    for (let i = 1; i <= section.total; i++) {
+      const code = `${section.code}${i}`;
+      if (!ownedSet.has(code.toUpperCase())) {
+        list.push(code);
+        wantedCount++;
+      }
     }
-    wantedGrouped[sectionName].list.push(sticker.code);
+
+    if (list.length > 0) {
+      wantedGrouped[teamName] = { flag, list };
+    }
   });
 
   const initials = user.display_name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() || 'U';
@@ -190,7 +209,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
                 borderRadius: '8px',
               }}
             >
-              {wanted.length}
+              {wantedCount}
             </span>
           </div>
 
@@ -220,7 +239,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
                 </div>
               </div>
             ))}
-            {wanted.length === 0 && (
+            {wantedCount === 0 && (
               <div className="text-center py-8 text-xs text-[rgba(240,238,232,0.3)]">
                 No tiene cromos pendientes en su lista.
               </div>
