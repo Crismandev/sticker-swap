@@ -34,43 +34,46 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const loadData = async () => {
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
 
-    if (!user) {
-      setUserId(null);
-      setProfile(null);
-      setStatusMap({});
+      if (!user) {
+        setUserId(null);
+        setProfile(null);
+        setStatusMap({});
+        return;
+      }
+
+      setUserId(user.id);
+
+      // Fetch profile and user stickers in parallel
+      const [profileRes, stickersRes] = await Promise.all([
+        supabase.from('users').select('id, username, display_name, city, country, share_token').eq('id', user.id).maybeSingle(),
+        supabase.from('user_stickers').select('status, quantity, stickers(code)').eq('user_id', user.id),
+      ]);
+
+      if (profileRes.data) {
+        setProfile(profileRes.data as UserProfile);
+      }
+
+      if (stickersRes.data) {
+        const map: Record<string, { status: StickerStatus; quantity: number }> = {};
+        stickersRes.data.forEach((row: any) => {
+          const code = Array.isArray(row.stickers)
+            ? row.stickers[0]?.code
+            : row.stickers?.code;
+          if (code) {
+            map[code] = { status: row.status as StickerStatus, quantity: row.quantity || 1 };
+          }
+        });
+        setStatusMap(map);
+      }
+    } catch (err) {
+      console.error('Error loadData in AppContext:', err);
+    } finally {
       setLoading(false);
-      return;
     }
-
-    setUserId(user.id);
-
-    // Fetch profile and user stickers in parallel
-    const [profileRes, stickersRes] = await Promise.all([
-      supabase.from('users').select('id, username, display_name, city, country, share_token').eq('id', user.id).maybeSingle(),
-      supabase.from('user_stickers').select('status, quantity, stickers(code)').eq('user_id', user.id),
-    ]);
-
-    if (profileRes.data) {
-      setProfile(profileRes.data as UserProfile);
-    }
-
-    if (stickersRes.data) {
-      const map: Record<string, { status: StickerStatus; quantity: number }> = {};
-      stickersRes.data.forEach((row: any) => {
-        const code = Array.isArray(row.stickers)
-          ? row.stickers[0]?.code
-          : row.stickers?.code;
-        if (code) {
-          map[code] = { status: row.status as StickerStatus, quantity: row.quantity || 1 };
-        }
-      });
-      setStatusMap(map);
-    }
-
-    setLoading(false);
   };
 
   const refreshProfileOnly = async () => {

@@ -79,6 +79,13 @@ export default function ProfilePage() {
     }
   }, [profile]);
 
+  // Redirect to login if not logged in
+  useEffect(() => {
+    if (!loading && !userId) {
+      window.location.href = '/login';
+    }
+  }, [loading, userId]);
+
   type StickerStatus = 'owned' | 'repeated' | 'wanted';
 
   const [codeToIdMap, setCodeToIdMap] = useState<Record<string, string>>({});
