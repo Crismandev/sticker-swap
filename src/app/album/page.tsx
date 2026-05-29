@@ -286,28 +286,40 @@ export default function AlbumPage() {
           .from('user_stickers')
           .update({ status, quantity, updated_at: new Date().toISOString() })
           .eq('id', existing.id);
-        if (updateErr) console.error('Update error:', updateErr);
+        if (updateErr) console.error('Update error:', updateErr.message, updateErr.code, updateErr.details);
       } else {
         const { error: insertErr } = await supabase
           .from('user_stickers')
           .insert({ user_id: userId, sticker_id: stickerRow.id, status, quantity });
         
         if (insertErr) {
+          console.error('Insert error full:', {
+            message: insertErr.message,
+            code: insertErr.code,
+            details: insertErr.details,
+            hint: insertErr.hint
+          });
+          
           // Fallback: If insert fails due to missing user profile, attempt to recreate it
           if (insertErr.code === '23503') { 
             console.log('Attempting to recover user profile...');
-            await supabase.from('users').insert({
+            const { error: userInsErr } = await supabase.from('users').insert({
               id: userId,
               email: `user_${userId.substring(0,6)}@swap.local`,
               username: `user_${userId.substring(0,8)}`,
               display_name: 'Sticker Collector'
             });
-            // Try inserting sticker again
-            await supabase
-              .from('user_stickers')
-              .insert({ user_id: userId, sticker_id: stickerRow.id, status, quantity });
-          } else {
-            console.error('Insert error:', insertErr);
+            if (userInsErr) {
+              console.error('Failed to auto-create user profile:', userInsErr.message, userInsErr.code);
+            } else {
+              // Try inserting sticker again
+              const { error: retryErr } = await supabase
+                .from('user_stickers')
+                .insert({ user_id: userId, sticker_id: stickerRow.id, status, quantity });
+              if (retryErr) {
+                console.error('Retry insert failed:', retryErr.message, retryErr.code);
+              }
+            }
           }
         }
       }

@@ -50,6 +50,14 @@ export default function ProfilePage() {
   const [country, setCountry] = useState('PE');
   const [shareToken, setShareToken] = useState('');
 
+  // Dev Console states
+  const [isConsoleOpen, setIsConsoleOpen] = useState(false);
+  const [consoleInput, setConsoleInput] = useState('');
+  const [consoleLog, setConsoleLog] = useState<string[]>([
+    'Consola Sticker Swap Dev v1.0',
+    'Escribe /help para ver comandos disponibles.'
+  ]);
+
   // Editing state
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState('');
@@ -266,6 +274,181 @@ export default function ProfilePage() {
     });
   };
 
+  const handleLogout = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    window.location.href = '/login';
+  };
+
+  const handleConsoleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const input = consoleInput.trim();
+    if (!input) return;
+
+    setConsoleInput('');
+    setConsoleLog(prev => [...prev, `> ${input}`]);
+
+    const parts = input.split(' ');
+    const command = parts[0].toLowerCase();
+    const arg = parts[1];
+
+    const supabase = createClient();
+
+    if (command === '/help') {
+      setConsoleLog(prev => [
+        ...prev,
+        'Comandos disponibles:',
+        '  /help                 Muestra este menú.',
+        '  /reset                Borra todas tus figuritas.',
+        '  /fill [porcentaje]    Rellena el álbum con un % de cromos (ej: /fill 50).',
+        '  /repeated [cantidad]  Añade N cromos repetidos al azar.',
+        '  /missing [cantidad]   Añade N cromos deseados (faltantes) al azar.',
+        '  /clear-log            Limpia la pantalla de consola.'
+      ]);
+      return;
+    }
+
+    if (command === '/clear-log') {
+      setConsoleLog([]);
+      return;
+    }
+
+    if (!userId) {
+      setConsoleLog(prev => [...prev, 'Error: No hay usuario autenticado.']);
+      return;
+    }
+
+    try {
+      if (command === '/reset') {
+        setConsoleLog(prev => [...prev, 'Borrando figuritas...']);
+        const { error } = await supabase
+          .from('user_stickers')
+          .delete()
+          .eq('user_id', userId);
+
+        if (error) throw error;
+        setConsoleLog(prev => [...prev, '¡Exito! Todas las figuritas eliminadas.']);
+        await fetchProfileAndStats(userId);
+        return;
+      }
+
+      if (command === '/fill') {
+        const pct = parseInt(arg || '50');
+        if (isNaN(pct) || pct < 1 || pct > 100) {
+          setConsoleLog(prev => [...prev, 'Error: Porcentaje inválido (1-100).']);
+          return;
+        }
+        setConsoleLog(prev => [...prev, `Rellenando álbum al ${pct}%...`]);
+
+        const { data: stickers, error: fetchErr } = await supabase
+          .from('stickers')
+          .select('id');
+
+        if (fetchErr) throw fetchErr;
+        if (!stickers || stickers.length === 0) {
+          setConsoleLog(prev => [...prev, 'Error: No hay stickers en la base de datos.']);
+          return;
+        }
+
+        const count = Math.floor((pct / 100) * stickers.length);
+        const shuffled = [...stickers].sort(() => 0.5 - Math.random());
+        const selected = shuffled.slice(0, count);
+
+        // Clear previous
+        await supabase.from('user_stickers').delete().eq('user_id', userId);
+
+        const rows = selected.map(s => ({
+          user_id: userId,
+          sticker_id: s.id,
+          status: 'owned',
+          quantity: 1,
+          updated_at: new Date().toISOString()
+        }));
+
+        const batchSize = 200;
+        for (let i = 0; i < rows.length; i += batchSize) {
+          const batch = rows.slice(i, i + batchSize);
+          const { error: insErr } = await supabase.from('user_stickers').insert(batch);
+          if (insErr) throw insErr;
+        }
+
+        setConsoleLog(prev => [...prev, `¡Exito! Álbum cargado con ${count} cromos (${pct}%).`]);
+        await fetchProfileAndStats(userId);
+        return;
+      }
+
+      if (command === '/repeated') {
+        const count = parseInt(arg || '10');
+        if (isNaN(count) || count < 1 || count > 100) {
+          setConsoleLog(prev => [...prev, 'Error: Cantidad inválida (1-100).']);
+          return;
+        }
+        setConsoleLog(prev => [...prev, `Añadiendo ${count} repetidos...`]);
+
+        const { data: stickers, error: fetchErr } = await supabase
+          .from('stickers')
+          .select('id');
+
+        if (fetchErr) throw fetchErr;
+
+        const shuffled = [...stickers].sort(() => 0.5 - Math.random());
+        const selected = shuffled.slice(0, count);
+
+        const rows = selected.map(s => ({
+          user_id: userId,
+          sticker_id: s.id,
+          status: 'repeated',
+          quantity: Math.floor(Math.random() * 3) + 2,
+          updated_at: new Date().toISOString()
+        }));
+
+        const { error: insErr } = await supabase.from('user_stickers').upsert(rows, { onConflict: 'user_id,sticker_id' });
+        if (insErr) throw insErr;
+
+        setConsoleLog(prev => [...prev, `¡Exito! Añadidos ${count} cromos repetidos.`]);
+        await fetchProfileAndStats(userId);
+        return;
+      }
+
+      if (command === '/missing') {
+        const count = parseInt(arg || '10');
+        if (isNaN(count) || count < 1 || count > 100) {
+          setConsoleLog(prev => [...prev, 'Error: Cantidad inválida (1-100).']);
+          return;
+        }
+        setConsoleLog(prev => [...prev, `Añadiendo ${count} deseados...`]);
+
+        const { data: stickers, error: fetchErr } = await supabase
+          .from('stickers')
+          .select('id');
+
+        if (fetchErr) throw fetchErr;
+
+        const shuffled = [...stickers].sort(() => 0.5 - Math.random());
+        const selected = shuffled.slice(0, count);
+
+        const rows = selected.map(s => ({
+          user_id: userId,
+          sticker_id: s.id,
+          status: 'wanted',
+          quantity: 1,
+          updated_at: new Date().toISOString()
+        }));
+
+        const { error: insErr } = await supabase.from('user_stickers').upsert(rows, { onConflict: 'user_id,sticker_id' });
+        if (insErr) throw insErr;
+
+        setConsoleLog(prev => [...prev, `¡Exito! Añadidos ${count} cromos faltantes.`]);
+        await fetchProfileAndStats(userId);
+        return;
+      }
+
+      setConsoleLog(prev => [...prev, `Error: Comando desconocido "${command}". Escribe /help.`]);
+    } catch (err: any) {
+      setConsoleLog(prev => [...prev, `Error al ejecutar: ${err.message || err}`]);
+    }
+  };
+
   if (loading) {
     return <ProfileSkeleton />;
   }
@@ -311,6 +494,17 @@ export default function ProfilePage() {
                 <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 20h9" />
                   <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                </svg>
+              </button>
+              <button
+                onClick={() => setIsConsoleOpen(true)}
+                className="p-1.5 opacity-55 hover:opacity-100 transition-all flex items-center justify-center rounded-lg active:scale-90 text-[#FFCB2F]"
+                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+                title="Consola de Desarrollo"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="4 17 10 11 4 5" />
+                  <line x1="12" y1="19" x2="20" y2="19" />
                 </svg>
               </button>
             </div>
@@ -382,6 +576,25 @@ export default function ProfilePage() {
               Carga rápida
             </Link>
           </div>
+          <button
+            onClick={handleLogout}
+            id="profile-logout-btn"
+            className="w-full py-3.5 text-[14px] font-body font-semibold flex items-center justify-center gap-2 rounded-[14px] transition-all active:scale-[0.97] hover:scale-[1.01]"
+            style={{
+              background: 'rgba(239, 68, 68, 0.08)',
+              border: '1px solid rgba(239, 68, 68, 0.22)',
+              color: '#ef4444',
+              cursor: 'pointer',
+              marginTop: '5px',
+            }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+            Cerrar sesión
+          </button>
         </div>
       </div>
 
@@ -583,6 +796,98 @@ export default function ProfilePage() {
               >
                 {saving ? 'Guardando...' : 'Guardar'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Dev Console Bottom Sheet Modal */}
+      {isConsoleOpen && (
+        <div className="fixed inset-0 z-[100] flex items-end justify-center">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/80 backdrop-blur-[8px] animate-fade-in"
+            onClick={() => setIsConsoleOpen(false)}
+          />
+          {/* Console Bottom Sheet */}
+          <div className="relative w-full max-w-md bg-[#090911] border-t border-[rgba(255,203,47,0.25)] rounded-t-[32px] p-6 pb-12 sm:pb-8 animate-slide-up z-10 flex flex-col gap-4 shadow-2xl">
+            {/* Grabber indicator */}
+            <div className="w-12 h-1.5 bg-[rgba(255,203,47,0.3)] rounded-full mx-auto" />
+            
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFCB2F" strokeWidth="2.5">
+                  <polyline points="4 17 10 11 4 5" />
+                  <line x1="12" y1="19" x2="20" y2="19" />
+                </svg>
+                <h3 className="font-display text-[18px] tracking-wider text-[#FFCB2F] uppercase">
+                  Consola de Desarrollo
+                </h3>
+              </div>
+              <button
+                onClick={() => setIsConsoleOpen(false)}
+                className="w-8 h-8 rounded-full flex items-center justify-center bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.08)] text-[rgba(240,238,232,0.6)] active:scale-90 transition-all"
+                style={{ cursor: 'pointer' }}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+
+            {/* Log Terminal Screen */}
+            <div 
+              className="w-full h-48 bg-[#040408] rounded-xl p-3 font-mono text-[11px] overflow-y-auto border border-[rgba(255,255,255,0.05)] flex flex-col gap-1 text-emerald-400"
+              style={{ boxShadow: 'inset 0 2px 10px rgba(0,0,0,0.8)' }}
+            >
+              {consoleLog.map((log, idx) => (
+                <div key={idx} className="whitespace-pre-wrap leading-relaxed">
+                  {log.startsWith('>') ? (
+                    <span className="text-zinc-500">{log}</span>
+                  ) : log.startsWith('Error') || log.startsWith('Opción') ? (
+                    <span className="text-rose-400">{log}</span>
+                  ) : log.startsWith('Exito') || log.startsWith('Cargado') || log.startsWith('¡') ? (
+                    <span className="text-amber-300">{log}</span>
+                  ) : (
+                    log
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Input Form */}
+            <form onSubmit={handleConsoleSubmit} className="flex gap-2">
+              <input
+                type="text"
+                value={consoleInput}
+                onChange={(e) => setConsoleInput(e.target.value)}
+                placeholder="Escribe un comando... (ej: /help)"
+                className="flex-1 px-4 py-3 bg-[#11111f] border border-[rgba(255,203,47,0.15)] rounded-xl text-xs font-mono focus:outline-none focus:border-[#FFCB2F] text-[#f0eee8]"
+                autoFocus
+              />
+              <button
+                type="submit"
+                className="px-4 py-3 bg-[#FFCB2F] text-[#08080e] rounded-xl font-body font-bold text-xs active:scale-95 transition-all"
+                style={{ cursor: 'pointer' }}
+              >
+                Enviar
+              </button>
+            </form>
+            
+            {/* Quick Helper Pills */}
+            <div className="flex flex-wrap gap-1.5 mt-1">
+              {['/help', '/reset', '/fill 50', '/repeated 10', '/missing 10'].map((cmd) => (
+                <button
+                  key={cmd}
+                  type="button"
+                  onClick={() => setConsoleInput(cmd)}
+                  className="px-2 py-1 rounded bg-[rgba(255,203,47,0.06)] border border-[rgba(255,203,47,0.15)] text-[10px] font-mono text-[#FFCB2F] hover:bg-[rgba(255,203,47,0.1)] active:scale-95"
+                  style={{ cursor: 'pointer' }}
+                >
+                  {cmd}
+                </button>
+              ))}
             </div>
           </div>
         </div>
