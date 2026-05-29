@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 type QuantityModalProps = {
   isOpen: boolean;
@@ -22,6 +23,11 @@ export default function QuantityModal({
   onSetStatus,
 }: QuantityModalProps) {
   const [quantity, setQuantity] = useState(initialQuantity);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -29,14 +35,14 @@ export default function QuantityModal({
     }
   }, [isOpen, initialQuantity]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
   const handleIncrement = () => setQuantity(q => q + 1);
   const handleDecrement = () => setQuantity(q => Math.max(1, q - 1));
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fade-in"
+      className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fade-in"
       style={{
         background: 'rgba(5, 5, 8, 0.75)',
         backdropFilter: 'blur(8px)',
@@ -45,7 +51,7 @@ export default function QuantityModal({
       onClick={onClose}
     >
       <div
-        className="w-full sm:max-w-md bg-[#0e0e16] border-t sm:border border-[rgba(255,255,255,0.08)] rounded-t-3xl sm:rounded-2xl p-6 pb-12 sm:pb-6 shadow-2xl animate-slide-up"
+        className="w-full sm:max-w-md bg-[#0e0e16] border-t sm:border border-[rgba(255,255,255,0.08)] rounded-t-3xl sm:rounded-2xl p-6 pb-[calc(2.5rem+env(safe-area-inset-bottom,0px))] sm:pb-6 shadow-2xl animate-slide-up"
         onClick={(e) => e.stopPropagation()}
         style={{
           boxShadow: '0 -10px 40px rgba(0,0,0,0.5), 0 10px 30px rgba(0,0,0,0.5)',
@@ -120,6 +126,7 @@ export default function QuantityModal({
               background: '#FAC71E',
               color: '#0a0a0f',
               border: 'none',
+              cursor: 'pointer'
             }}
           >
             Guardar cantidad
@@ -158,12 +165,13 @@ export default function QuantityModal({
           <button
             onClick={onClose}
             className="w-full py-2.5 mt-2 rounded-xl font-body text-xs text-[rgba(240,238,232,0.4)] hover:text-[rgba(240,238,232,0.8)] transition-all"
-            style={{ background: 'transparent', border: 'none' }}
+            style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
           >
             Cancelar
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -211,7 +211,7 @@ export default function MatchChatPage({ params }: { params: Promise<{ id: string
   }
 
   return (
-    <div className="flex flex-col h-screen w-full max-w-md md:max-w-2xl mx-auto bg-[#0a0a0f] text-[#f0eee8] overflow-hidden border-x border-[rgba(255,255,255,0.06)]">
+    <div className="flex flex-col h-[100dvh] w-full max-w-md md:max-w-2xl mx-auto bg-[#0a0a0f] text-[#f0eee8] overflow-hidden border-x border-[rgba(255,255,255,0.06)]">
       {/* ── Chat Header ────────────────────────────────────── */}
       <div
         className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-[rgba(255,255,255,0.06)]"
@@ -362,23 +362,24 @@ export default function MatchChatPage({ params }: { params: Promise<{ id: string
       {/* ── Input Bar ──────────────────────────────────────── */}
       <form
         onSubmit={handleSend}
-        className="flex-shrink-0 px-4 py-3 bg-[#0e0e16] border-t border-[rgba(255,255,255,0.06)] flex items-center gap-2 pb-safe"
+        className="flex-shrink-0 px-4 py-4 bg-[#0a0a0f] border-t border-[rgba(255,255,255,0.06)] flex items-center gap-3 pb-[calc(1.2rem+env(safe-area-inset-bottom,0px))]"
       >
         <input
           type="text"
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="Escribe un mensaje..."
-          className="flex-1 px-4 py-3 bg-[#161622] border border-[rgba(255,255,255,0.08)] rounded-xl text-sm focus:outline-none focus:border-[#FAC71E] transition-all font-body text-[#f0eee8] placeholder-[rgba(240,238,232,0.25)]"
+          className="flex-1 px-5 py-3.5 bg-[#141420] border border-[rgba(255,255,255,0.06)] rounded-full text-[15px] focus:outline-none focus:border-[#FAC71E] transition-all font-body text-[#f0eee8] placeholder-[rgba(240,238,232,0.3)] shadow-inner"
         />
         <button
           type="submit"
           disabled={!text.trim()}
-          className="w-11 h-11 flex items-center justify-center bg-[#FAC71E] active:scale-95 transition-all text-[#0a0a0f] disabled:opacity-40 disabled:scale-100"
-          style={{ borderRadius: 12 }}
+          className="w-12 h-12 flex items-center justify-center bg-[#FAC71E] active:scale-90 hover:scale-105 transition-all text-[#0a0a0f] disabled:opacity-40 disabled:scale-100 rounded-full flex-shrink-0 shadow-lg shadow-[#FAC71E]/15"
+          style={{ cursor: 'pointer' }}
         >
-          <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="translate-x-[1px]">
-            <path d="M15 1L1 8l6 1 1 6 7-14z" />
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="translate-x-[1px]">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
           </svg>
         </button>
       </form>

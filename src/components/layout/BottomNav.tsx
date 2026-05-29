@@ -58,6 +58,10 @@ const NAV = [
 export default function BottomNav() {
   const pathname = usePathname();
 
+  // Hide bottom nav in chat detail view
+  const isChatDetail = pathname.startsWith('/matches/') && pathname !== '/matches';
+  if (isChatDetail) return null;
+
   return (
     <nav
       className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md z-50 flex justify-around items-end"
